@@ -80,11 +80,12 @@ STIM.cue(2).pos = [0.75 0]; % [H V] dva relative to fix
 % cue side: 1 image with response association, one without
 % cue side: 1 image with response association, one without
 
-% Timing of trial (in ms)
+% Timing of trial FIX-STIM-FEEDBACK (in ms)
+% 0 in STIM phase is not read, instead 'until response'
 STIM.Timing = [500 0 1000];
 STIM.Times.Fix = 500;
 STIM.Times.Cue = [0 Inf]; % ms after fix [start stop] 
-STIM.Times.Stim = [0 Inf]; % ms after fix [start stop]
+STIM.Times.Cue = [0 Inf]; % ms after fix [start stop]
 % if stop is Inf, it's until response
 STIM.RequireFixToStart = false; % this can be useful to ensure fixation, but
 % make sure the Eyelink works well enough to not make this frustrating
