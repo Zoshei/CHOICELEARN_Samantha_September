@@ -1,6 +1,6 @@
-function CL_run
+function CL_run(Debug)
 
-%% PTB3 script for ========================================================
+%% PTB3 script for ======================================================
 % CHOICE_LEARNING experiment
 % Questions: c.klink@nin.knaw.nl
 
@@ -17,21 +17,24 @@ function CL_run
 clear all; 
 clc;
 QuitScript = false;
-Debug = true;
+
+if nargin < 1
+    Debug = false;
+end
+DebugRect = [0 0 1024 768];
 warning off; %#ok<*WNOFF>
 
-%% Read in variables ------------------------------------------------------
+%% Read in variables ----------------------------------------------------
 % First get the settings
 CL_settings;
 
-%% Create data folder if it doesn't exist yet and go there ----------------
+%% Create data folder if it doesn't exist yet and go there --------------
 DataFolder = 'CL_data';
 StartFolder = pwd;
-mkdir(DataFolder);
-cd(DataFolder);
+[~,~] = mkdir(fullfile(StartFolder,DataFolder));
 
 try
-    %% Initialize & Calculate Stimuli -------------------------------------
+    %% Initialize & Calculate Stimuli -----------------------------------
     if Debug
         LOG.Subject = 'TEST';
         LOG.Gender = 'x';
@@ -78,10 +81,8 @@ try
     HideCursor;
 
     %Define response keys
-    KeyL1 = KbName('LeftArrow');
-    KeyL2 = KbName('1!');
-    KeyR1 = KbName('RightArrow');
-    KeyR2 = KbName('2@');
+    Key1 = KbName(STIM.Key1);
+    Key2 = KbName(STIM.Key2);
     KeyFix = KbName('space');
 
     if ~IsLinux
@@ -133,8 +134,7 @@ try
     % Open a double-buffered window on screen
     if Debug
         % for CK desktop linux; take one screen only
-        WindowRect=...
-            [0 0 0.5*STIM.Screen.PixWidth STIM.Screen.PixHeight]; %debug
+        WindowRect = DebugRect; %debug
     else
         WindowRect = []; %fullscreen
     end
@@ -169,7 +169,7 @@ try
     % Get the refreshrate
     STIM.Screen.FrameDur = Screen('GetFlipInterval',STIM.Screen.window);
 
-    %% Prepare stimuli ----------------------------------------------------
+    %% Prepare stimuli --------------------------------------------------
     % generate a trial list ---
     LOG.TrialList = [];
     if STIM.Trials.Blocked
@@ -208,22 +208,37 @@ try
     end
 
     % load images that are needed ---
-    % we may need to do this in a sensisble way to avoid slow-downs
+    % we may need to do this in a more sensisble way to avoid slow-downs
     % or memory issues. However, try to do it the simple way first as the
     % number of unique images may not be prohibitively high in this
     % experiment
 
     uniquetrials = unique(LOG.TrialList(:,1));
     allimages = [];
-    for ut = uniquetrials
+    for ut = uniquetrials'
         allimages = [allimages, STIM.Trials.trial(ut).images];
     end
     uniqueimages = unique(allimages);
 
+    % pre-allocate cariable for all possible images
+    for i = 1: length(STIM.img)
+        STIM.img(i).img = [];
+        STIM.img(i).tex = [];
+    end
+
+    % load the ones we need
     for ui = uniqueimages
         STIM.img(ui).img = imread(fullfile(STIM.bitmapdir,STIM.img(ui).fn));
         STIM.img(ui).tex = MakeTexture(STIM.Screen.window,STIM.img(ui).img);
     end
+
+    % load the sounds we need
+    [snd(1).wav,snd(1).fs] = audioread(fullfile(STIM.snddir,...
+        STIM.Feedback.SoundCorrect{1}));
+    [snd(2).wav,snd(2).fs] = audioread(fullfile(STIM.snddir,...
+        STIM.Feedback.SoundCorrect{2}));
+    [snd(3).wav,snd(3).fs] = audioread(fullfile(STIM.snddir,...
+        STIM.Feedback.SoundWrong));
 
     % Create filename ---
     LOG.FileName = [LOG.Subject '_' DataFolder '_' LOG.DateTimeStr];
@@ -244,24 +259,23 @@ try
                 x2 = round(STIM.Screen.Center(1) + ...
                     (STIM.cue(c).pos(1)+STIM.cue(c).sz(1)/2)*STIM.Screen.Deg2Pix);
                 y1 = round(STIM.Screen.Center(2) + ...
-                    STIM.cue(c).pos(2)*STIM.Screen.Deg2Pix);
-                y2 = y1;
-                lw = round(STIM.cue(c).sz(2)*STIM.Screen.Deg2Pix);
-                STIM.cue(c).xy = [x1,y1,x2,y2,lw];
+                    (STIM.cue(c).pos(2)-STIM.cue(c).sz(2)/2)*STIM.Screen.Deg2Pix);
+                y2 = round(STIM.Screen.Center(2) + ...
+                    (STIM.cue(c).pos(2)+STIM.cue(c).sz(2)/2)*STIM.Screen.Deg2Pix);
+                STIM.cue(c).rect = [x1,y1,x2,y2];
            case 'something else'
-                % keep this open for alternative cues
+                % keep this open for alternative cue types
         end
     end
 
     %% Run the Experiment
-    % Eyelink
-
-    %% Calibrate EYELINK-----------------------------------------------
+    %% Calibrate EYELINK ------------------------------------------------
     if HARDWARE.EyelinkConnected
         % open file to record data to
-        mkdir 'Eyelink_Log';
+        [~,~] = mkdir(fullfile(StartFolder, DataFolder,'Eyelink_Log'));
         EL.edfFile = 'TempEL'; %NB! Name cannot be more than 8 digits long
-        Eyelink('Openfile', EL.edfFile);
+        cd(fullfile(StartFolder, DataFolder))
+        Eyelink('Openfile',EL.edfFile);
         EL.el = EyelinkInitDefaults(STIM.Screen.windowEL);
         EL.el.backgroundcolour = STIM.BackColor*STIM.Screen.white;
         EL.el.foregroundcolour = STIM.Screen.black;
@@ -271,7 +285,7 @@ try
         % do a final check of calibration using driftcorrection
         %EyelinkDoDriftCorrection(EL.el);
 
-        %% Inititialize ---------------------------------------------------
+        %% Initialize ---------------------------------------------------
         % start recording eye position
         Eyelink('StartRecording');
         % record a few samples before we actually start displaying
@@ -281,36 +295,18 @@ try
         EL.eye_used = -1;
         Eyelink('Message', LOG.FileName);
         Screen('Close', STIM.Screen.windowEL);
+        cd(StartFolder);
     end
 
     % Run the trials
     for TR = 1:size(LOG.TrialList,1)
         if QuitScript
             break;
+        else
+            KeyWasDown = false;
         end
         
-        LOG.Block(LOG.SesNr).Trial(TR).CondNr = Trials(TR);
-        LOG.Block(LOG.SesNr).Trial(TR).Cond = ...
-            STIM.Conditions(LOG.Block(LOG.SesNr).Trial(TR).CondNr,:);
-
-        RV_TL = LOG.Block(LOG.SesNr).Trial(TR).Cond(2:3);
-        RVS = 1:length(STIM.Reward.Values);
-        RTL = 1:STIM.NoOfTargets;
-        RemainingRV = RVS(RVS~=RV_TL(1));
-        RemainingTL = RTL(RTL~=RV_TL(2));
-        RemainingTLs= RemainingTL(randperm(length(RemainingTL)));
-        RVS_TLS = [RV_TL; [RemainingRV' RemainingTLs']];
-        RVS_TLS_ORG = RVS_TLS;
-        RVS_TLS = sortrows(RVS_TLS,2);
-        LOG.Block(LOG.SesNr).Trial(TR).RV_TL = RVS_TLS;
-
-
-
-
-
-
-
-        % 
+        % Trial-start to Eyelink
         if HARDWARE.EyelinkConnected
             pause(0.1) % send some samples to edf file
             %send message to EDF file
@@ -332,7 +328,7 @@ try
                         [keyIsDown,secs,keyCode] = KbCheck; %#ok<*ASGLU>
                         if keyIsDown
                             if keyCode(KeyBreak) %break when esc
-                                QuitScript = 1; break;
+                                QuitScript = true; break;
                             elseif keyCode(KeyFix)
                                 % Get eye-coordinates if spacebar
                                 if Eyelink('NewFloatSampleAvailable') > 0
@@ -369,13 +365,14 @@ try
                     end
                 end
                 %%% ============================
-            else CenterFix = [0,0];
+            else 
+                CenterFix = [0,0];
             end
-            LOG.Block(LOG.SesNr).Trial(TR).CenterFix = CenterFix;
+            LOG.Trial(TR).CenterFix = CenterFix;
 
             %% Fix-phase
-            % First frame
-            if TR == 1 || ~mod(TR,STIM.Reward.ColorLegendEveryN)
+            % First trial
+            if TR == 1 
                 % start of the experiment
                 Screen('FillRect',STIM.Screen.window,...
                     STIM.BackColor*STIM.Screen.white);
@@ -383,91 +380,120 @@ try
                     '>> Press key to start <<','center',....
                     STIM.Screen.Center(2)-40,...
                     STIM.TextIntensity);
-                fprintf('\n>>Press key to start the experiment<<\n');
+                fprintf('\n>>Press key to start<<\n');
+                vbl = Screen('Flip', STIM.Screen.window);
+                LOG.ExpOnset = vbl; 
 
-                % display reward color legend
-                if STIM.Reward.ShowColorLegend
-                    for i=[3 2 1] % draw in reverse order
-                        Screen('FillRect', STIM.Screen.window,...
-                            STIM.Reward.Indicator.Colors(i,:).*...
-                            STIM.Screen.white,LegendRect{i});
-                    end
-                    % set text to be bigger
-                    oldTextSize=Screen('TextSize', STIM.Screen.window,...
-                        STIM.Feedback.TextSize(1));
-                    oldTextStyle=Screen('TextStyle',STIM.Screen.window,1); %bold
-                    % Draw text
-                    Screen('DrawText',STIM.Screen.window,...
-                        ['+' num2str(STIM.Reward.Values(1)) '  '],...
-                        STIM.Screen.Center(1)+max(RewDMpix)/2,STIM.Screen.Center(2)-...
-                        max(RewDMpix)/2,...
-                        STIM.Reward.Indicator.Colors(1,:).*...
-                        STIM.TextIntensity);
-                    Screen('DrawText',STIM.Screen.window,...
-                        ['+' num2str(STIM.Reward.Values(2)) '  '],...
-                        STIM.Screen.Center(1)+max(RewDMpix)/2,STIM.Screen.Center(2)-...
-                        STIM.Feedback.TextSize(1)/2,...
-                        STIM.Reward.Indicator.Colors(2,:).*...
-                        STIM.TextIntensity);
-                    Screen('DrawText',STIM.Screen.window,...
-                        ['+' num2str(STIM.Reward.Values(3)) '  '],...
-                        STIM.Screen.Center(1)+max(RewDMpix)/2,STIM.Screen.Center(2)+...
-                        max(RewDMpix)/2,...
-                        STIM.Reward.Indicator.Colors(3,:).*...
-                        STIM.TextIntensity,[],1);
-                    % Set text size back to small
-                    Screen('TextSize', STIM.Screen.window,oldTextSize);
-                    Screen('TextStyle',STIM.Screen.window,0);
-                end
-                vbl = Screen('Flip', STIM.Screen.window);
-                pause(.5);
+                % wait for keypress
                 KbWait;while KbCheck;end
-                Screen('FillRect',STIM.Screen.window,...
-                    STIM.BackColor*STIM.Screen.white);
-                vbl = Screen('Flip', STIM.Screen.window);
+
                 % send message to eyelink
                 if HARDWARE.EyelinkConnected
                     Eyelink('Message', 'StartFix');
                 end
             end
 
-            % Set inital key-status
-            KeyWasDown=0;
-
             % Draw the fixation dot
             Screen('FillOval', STIM.Screen.window,...
                 STIM.Fix.Color.*STIM.Screen.white,FixRect);
             vbl = Screen('Flip', STIM.Screen.window);
-            LOG.Block(LOG.SesNr).Trial(TR).FixOnset = vbl;
+            LOG.Trial(TR).FixOnset = vbl - LOG.ExpOnset;
+
+            if STIM.RequireFixToStart
+                FixatingNow = false; FixCheckStart = GetSecs;
+                % Wait until subject fixates or a minute has passed
+                while ~FixatingNow && GetSecs < (FixCheckStart + STIM.MaxDurFixCheck)
+                    % GET EYE POSITION
+                    if Eyelink('NewFloatSampleAvailable') > 0
+                        eyepos = Eyelink('NewestFloatSample');
+                        % eyepos.gx(1),eyepos.gy(1) are x ,y;
+                        % eyes can be missing
+                        if evt.gx(1) < -10000 % pupil is not measured
+                            % 'No eye-signal. Try again or ask for help.';
+                        end
+                    end
+
+                   % CHECK IF IT'S WITHIN FIX WINDOW
+                   eye_ecc = sqrt(eyepos.gx(1)^2 + eyepos.gy(1)^2);
+                   if eye_ecc < STIM.FixWindowRadius*STIM.Screen.Deg2Pix
+                        FixatingNow = true;
+                   end
+                end
+                if ~FixatingNow
+                    % fixation check timed out
+                    QuitScript = true;
+                    msgbox('Fixation timed out. Check eyetracker or ask for help');
+                end
+            else
+                % emulate fixation
+                FixatingNow = true;
+            end
+
+
+
+
 
             % Fixation phase all but first frame
-            while vbl < LOG.Block(LOG.SesNr).Trial(TR).FixOnset+ ...
-                    STIM.Timing(1)/1000 && QuitScript==0
+            while vbl < LOG.Trial(TR).FixOnset + ...
+                    STIM.Times.Fix/1000 && ~QuitScript
 
                 % Draw fix dot
                 Screen('FillOval', STIM.Screen.window,...
                     STIM.Fix.Color.*STIM.Screen.white,FixRect);
 
-                % draw cue if required
-                % If reward cue is required, draw it
-                if STIM.Conditions(Trials(TR),1)==1 && ...
-                        vbl > LOG.Block(LOG.SesNr).Trial(TR).FixOnset+STIM.Reward.Indicator.TimeOffset/1000 && ...
-                        (STIM.Reward.Indicator.Duration==0 || ...
-                        vbl < LOG.Block(LOG.SesNr).Trial(TR).FixOnset+STIM.Reward.Indicator.Duration/1000)
-                    % Draw reward value cue
-                    Screen('DrawLines', STIM.Screen.window,...
-                        CueXY,CuePen,CueColor);
-                    % Detect cue onset
-                    if CueOnsetDetected == 0
-                        CueOnsetDetected  = 1;
-                    end
+                % Flip the screen buffer and get timestamp
+                vbl = Screen('Flip', STIM.Screen.window);
+            end
+
+
+            %% Cue/Image-phase
+            StartStim = vbl; 
+            MaxDur = max([STIM.Times.Cue(2) STIM.Times.Stim(2)]);
+            ResponseGiven = false;
+
+            FirstFlipDone = false;
+            CueOn = false; CueOnLog = false;
+            ImageOn = false; ImageOnLog = false;
+            
+
+            while vbl < (LOG.Trial(TR).FixOnset + MaxDur/1000) && ...
+                    ~ResponseGiven && ~QuitScript
+
+                % CUE --
+                if vbl > LOG.Trial(TR).FixOnset + ...
+                        STIM.Times.Cue/1000 && ~QuitScript
+                    % Draw cues
+                    % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+                    % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+                    CueOn = true;
                 end
 
+                % IMAGES --
+                if vbl > LOG.Trial(TR).FixOnset + ...
+                        STIM.Times.Stim/1000 && ~QuitScript
+                    % Draw stim images
+                    % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+                    % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+                    ImageOn = true;
+                end
+
+                % FIX --
+                % Draw fix dot
+                Screen('FillOval', STIM.Screen.window,...
+                    STIM.Fix.Color.*STIM.Screen.white,FixRect);
+
+                % GET RESPONSE --
                 % Check for key-presses
                 [keyIsDown,secs,keyCode]=KbCheck; %#ok<*ASGLU>
                 if keyIsDown && ~KeyWasDown
                     if keyCode(KeyBreak) %break when esc
                         QuitScript=1;break;
+                    elseif keyCode(KeyL1) || keyCode(KeyL2)
+                        LOG.Trial(TR).Response = 'left';
+                        LOG.Trial(TR).Resp = 1;
+                    elseif keyCode(KeyR1) || keyCode(KeyR2)
+                        LOG.Trial(TR).Response = 'right';
+                        LOG.Trial(TR).Resp = 2;
                     end
                     KeyWasDown=1;
                 elseif keyIsDown && KeyWasDown
@@ -476,490 +502,76 @@ try
                     end
                 end
 
+                % FLIP SCREEN --
                 % Flip the screen buffer and get timestamp
                 vbl = Screen('Flip', STIM.Screen.window);
-                % Log cue onset
-                if CueOnsetDetected == 1
-                    LOG.Block(LOG.SesNr).Trial(TR).CueOnset = vbl;
-                    CueOnsetDetected  = 2;
-                end
-            end
 
-            %% Sample-phase
-            StartSample=vbl;FirstSampleFlipDone=0;
-            % determine target positions
-            % all angles
-            TargetAngles=zeros(STIM.NoOfTargets,1);
-            % random first angle on circle
-            if STIM.RandPosCircle
-                TargetAngles(1)=rand(1)*2*pi/STIM.NoOfTargets;
-            else
-                TargetAngles(1)=STIM.FirstPosCircle*(2*pi/360);
-            end
-            % other angles on circle
-            for i=2:STIM.NoOfTargets
-                TargetAngles(i)=TargetAngles(1)+...
-                    (2*pi/STIM.NoOfTargets)*(i-1);
-            end
-            % distance from center
-            Radius = STIM.Target.DistFromCenter*STIM.Screen.Deg2Pix;
-            RadiusCue = STIM.Reward.Indicator.DistanceFromFix*...
-                STIM.Screen.Deg2Pix;
-            % Cartesian coordinates
-            [TargetX, TargetY] = pol2cart(TargetAngles,Radius);
-            [CueX, CueY] = pol2cart(TargetAngles,RadiusCue);
-            % Target rects
-            for i=1:length(TargetX)
-                TRect{i}=[...
-                    STIM.Screen.Center(1)+TargetX(i)-...
-                    STIM.Target.Size*STIM.Screen.Deg2Pix/2
-                    STIM.Screen.Center(2)+TargetY(i)-...
-                    STIM.Target.Size*STIM.Screen.Deg2Pix/2
-                    STIM.Screen.Center(1)+TargetX(i)+...
-                    STIM.Target.Size*STIM.Screen.Deg2Pix/2
-                    STIM.Screen.Center(2)+TargetY(i)+...
-                    STIM.Target.Size*STIM.Screen.Deg2Pix/2];
-                TRect2{i}=[...
-                    STIM.Screen.Center(1)+TargetX(i)-...
-                    STIM.Reward.Indicator.Size*STIM.Screen.Deg2Pix/2
-                    STIM.Screen.Center(2)+TargetY(i)-...
-                    STIM.Reward.Indicator.Size*STIM.Screen.Deg2Pix/2
-                    STIM.Screen.Center(1)+TargetX(i)+...
-                    STIM.Reward.Indicator.Size*STIM.Screen.Deg2Pix/2
-                    STIM.Screen.Center(2)+TargetY(i)+...
-                    STIM.Reward.Indicator.Size*STIM.Screen.Deg2Pix/2];
-            end
-            % Source rect
-            SRect=[...
-                STIM.Screen.PixHeight/2-...
-                STIM.Target.Size*STIM.Screen.Deg2Pix
-                STIM.Screen.PixHeight/2-...
-                STIM.Target.Size*STIM.Screen.Deg2Pix
-                STIM.Screen.PixHeight/2+...
-                STIM.Target.Size*STIM.Screen.Deg2Pix
-                STIM.Screen.PixHeight/2+...
-                STIM.Target.Size*STIM.Screen.Deg2Pix];
-            % angles to use
-            TargetDrawAngles=zeros(1,STIM.NoOfTargets);
-            TargetDrawAngles(STIM.Conditions(Trials(TR),3))=...
-                STIM.Conditions(Trials(TR),4);
-            AnglesUsed=STIM.Conditions(Trials(TR),4);
-            TarInd=1:STIM.NoOfTargets;
-            TarInd(TarInd==STIM.Conditions(Trials(TR),3))=[];
-            for i=TarInd;
-                OK=0;
-                while OK==0
-                    %pick a random orientation from the possibilities
-                    PickedAngle = ...
-                        STIM.Target.Orientations(ceil(rand(1)*...
-                        (length(STIM.Target.Orientations))));
-                    if ~ismember(PickedAngle,AnglesUsed)
-                        AnglesUsed=[AnglesUsed;PickedAngle];
-                        TargetDrawAngles(i)=PickedAngle;
-                        OK=1;
-                    end
-                end
-            end
-
-            % Cue rects
-            for i=1:length(TargetX)
-                CRect{i}=[...
-                    STIM.Screen.Center(1)+CueX(i)-...
-                    STIM.Reward.Indicator.Size*STIM.Screen.Deg2Pix/2
-                    STIM.Screen.Center(2)+CueY(i)-...
-                    STIM.Reward.Indicator.Size*STIM.Screen.Deg2Pix/2
-                    STIM.Screen.Center(1)+CueX(i)+...
-                    STIM.Reward.Indicator.Size*STIM.Screen.Deg2Pix/2
-                    STIM.Screen.Center(2)+CueY(i)+...
-                    STIM.Reward.Indicator.Size*STIM.Screen.Deg2Pix/2];
-            end
-
-            % log some target info
-            LOG.Block(LOG.SesNr).Trial(TR).TargetsXY = [TargetX TargetY];
-            LOG.Block(LOG.SesNr).Trial(TR).TargetsAngleOnCircle = ...
-                TargetAngles*(360/(2*pi));
-            LOG.Block(LOG.SesNr).Trial(TR).TargetOrientSample = ...
-                TargetDrawAngles;
-
-            %Start drawing
-            while vbl<StartSample+STIM.Timing(2)/1000 && QuitScript==0
-
-                % if cues should be incorporated: use different
-                % contrasts, else use middle contrast for all
-
-                if STIM.Conditions(Trials(TR),1)==2 % use contrasts
-                    % draw targets
-                    for nT=1:STIM.NoOfTargets
-                        % grating
-                        Screen('DrawTexture',STIM.Screen.window, ...
-                            STIM.Target.GratingTexture{RVS_TLS(nT,1)}, ...
-                            SRect,TRect{nT},...
-                            TargetDrawAngles(nT));
-                        % mask
-                        Screen('DrawTexture',STIM.Screen.window, ...
-                            STIM.Target.MaskTexture, ...
-                            SRect,TRect{nT},...
-                            TargetDrawAngles(nT));
-                    end
-                else
-                    % draw targets
-                    for nT=1:STIM.NoOfTargets
-                        % grating
-                        Screen('DrawTexture',STIM.Screen.window, ...
-                            STIM.Target.GratingTexture{2}, ...
-                            SRect,TRect{nT},...
-                            TargetDrawAngles(nT));
-                        % mask
-                        Screen('DrawTexture',STIM.Screen.window, ...
-                            STIM.Target.MaskTexture, ...
-                            SRect,TRect{nT},...
-                            TargetDrawAngles(nT));
-                    end
-                end
-
-                % draw reward indicators if required
-                if STIM.Conditions(Trials(TR),1)==2 && ...
-                        vbl > StartSample-STIM.Screen.FrameDur+STIM.Reward.Indicator.TimeOffset/1000 && ...
-                        (STIM.Reward.Indicator.Duration==0 || ...
-                        vbl < StartSample+STIM.Reward.Indicator.Duration/1000)
-                    for nT=1:STIM.NoOfTargets
-                        % cue
-                        %                                 Screen('FillOval',STIM.Screen.window, ...
-                        %                                     STIM.Reward.Indicator.Colors(RVS_TLS(nT,1),:).*...
-                        %                                     STIM.Screen.white, ...
-                        %                                     CRect{nT});
-                        Screen('FrameOval',STIM.Screen.window, ...
-                            STIM.Reward.Indicator.Colors(RVS_TLS(nT,1),:).*...
-                            STIM.Screen.white, ...
-                            TRect2{nT},STIM.Reward.Indicator.LineWidth*...
-                            STIM.Screen.Deg2Pix);
-                    end
-                    % Detect cue onset
-                    if CueOnsetDetected == 0
-                        CueOnsetDetected  = 1;
-                    end
-                else % draw neutral circle
-                    for nT=1:STIM.NoOfTargets
-                        Screen('FrameOval',STIM.Screen.window, ...
-                            STIM.Reward.Indicator.NeutralColor.*...
-                            STIM.Screen.white, ...
-                            TRect2{nT},STIM.Reward.Indicator.LineWidth*...
-                            STIM.Screen.Deg2Pix);
-                    end
-                end
-
-                % draw fixation
-                Screen('FillOval', STIM.Screen.window,...
-                    STIM.Fix.Color.*STIM.Screen.white,FixRect);
-
-                % Check for key-presses
-                [keyIsDown,secs,keyCode]=KbCheck; %#ok<*ASGLU>
-                if keyIsDown && ~KeyWasDown
-                    if keyCode(KeyBreak) %break when esc
-                        QuitScript=1;break;
-                    end
-                    KeyWasDown=1;
-                elseif keyIsDown && KeyWasDown
-                    if keyCode(KeyBreak) %break when esc
-                        QuitScript=1;break;
-                    end
-                end
-
-                % flip
-                % Flip the screen buffer and get timestamp
-                vbl = Screen('Flip', STIM.Screen.window);
-                if FirstSampleFlipDone == 0
-                    StartSample = vbl;
-                    FirstSampleFlipDone = 1;
-                    % Log sample onset
-                    LOG.Block(LOG.SesNr).Trial(TR).SampleOnset = StartSample;
+                % LOG --
+                if ~FirstFlipDone
+                    % Log stim-phase onset
+                    LOG.Trial(TR).StimPhaseOnset = ...
+                        vbl - LOG.ExpOnset;
                     % send message to eyelink
                     if HARDWARE.EyelinkConnected
-                        Eyelink('Message', 'StartSample');
+                        Eyelink('Message', 'StartStim');
                     end
-                end
-                % Log cue onset
-                if CueOnsetDetected == 1
-                    LOG.Block(LOG.SesNr).Trial(TR).CueOnset = vbl;
-                    CueOnsetDetected  = 2;
-                end
-            end
-
-            %% Memory-phase
-            for MemoryPhase=1
-                StartMemory=vbl;FirstSampleFlipDone=0;
-
-                %Start drawing
-                while vbl<StartMemory+STIM.Timing(3)/1000 && QuitScript==0
-
-                    % draw fixation
-                    Screen('FillOval', STIM.Screen.window,...
-                        STIM.Fix.Color.*STIM.Screen.white,FixRect);
-
-                    % draw reward indicators if required
-                    if STIM.Conditions(Trials(TR),1)==3 && ...
-                            vbl > StartMemory-STIM.Screen.FrameDur+STIM.Reward.Indicator.TimeOffset/1000 && ...
-                            (STIM.Reward.Indicator.Duration==0 || ...
-                            vbl < StartMemory+STIM.Reward.Indicator.Duration/1000)
-                        for nT=1:STIM.NoOfTargets
-                            % cue
-                            %                                 Screen('FillOval',STIM.Screen.window, ...
-                            %                                     STIM.Reward.Indicator.Colors(RVS_TLS(nT,1),:).*...
-                            %                                     STIM.Screen.white, ...
-                            %                                     CRect{nT});
-                            Screen('FrameOval',STIM.Screen.window, ...
-                                STIM.Reward.Indicator.Colors(RVS_TLS(nT,1),:).*...
-                                STIM.Screen.white, ...
-                                TRect2{nT},STIM.Reward.Indicator.LineWidth*...
-                                STIM.Screen.Deg2Pix);
-                        end
-                        % Detect cue onset
-                        if CueOnsetDetected == 0
-                            CueOnsetDetected  = 1;
-                        end
-                    else % draw neutral circle
-                        for nT=1:STIM.NoOfTargets
-                            Screen('FrameOval',STIM.Screen.window, ...
-                                STIM.Reward.Indicator.NeutralColor.*...
-                                STIM.Screen.white, ...
-                                TRect2{nT},STIM.Reward.Indicator.LineWidth*...
-                                STIM.Screen.Deg2Pix);
-                        end
-                    end
-
-                    % Check for key-presses
-                    [keyIsDown,secs,keyCode]=KbCheck; %#ok<*ASGLU>
-                    if keyIsDown && ~KeyWasDown
-                        if keyCode(KeyBreak) %break when esc
-                            QuitScript=1;break;
-                        end
-                        KeyWasDown=1;
-                    elseif keyIsDown && KeyWasDown
-                        if keyCode(KeyBreak) %break when esc
-                            QuitScript=1;break;
-                        end
-                    end
-
-                    % flip
-                    % Flip the screen buffer and get timestamp
-                    vbl = Screen('Flip', STIM.Screen.window);
-                    if FirstSampleFlipDone == 0
-                        StartMemory = vbl;
-                        FirstSampleFlipDone = 1;
-                        % Log sample onset
-                        LOG.Block(LOG.SesNr).Trial(TR).MemoryOnset = StartMemory;
-                        % send message to eyelink
-                        if HARDWARE.EyelinkConnected
-                            Eyelink('Message', 'StartMemory');
-                        end
-                    end
-                    % Log cue onset
-                    if CueOnsetDetected == 1
-                        LOG.Block(LOG.SesNr).Trial(TR).CueOnset = vbl;
-                        CueOnsetDetected  = 2;
-                    end
-                end
-            end
-
-            %% Test-phase
-            StartTest=vbl;FirstTestFlipDone=0;ResponseCollected=0;
-
-            % Give the slected target a random starting angle
-            TargetDrawAngles(STIM.Conditions(Trials(TR),3))=...
-                rand(1)*360;
-            Angle0=TargetDrawAngles(STIM.Conditions(Trials(TR),3));
-            AngleToDraw=Angle0;
-
-            % Log angles
-            LOG.Block(LOG.SesNr).Trial(TR).TargetOrientTest = ...
-                TargetDrawAngles;
-
-            %Start drawing
-            while ResponseCollected == 0 && QuitScript==0
-                if STIM.Target.AllOnTest
-                    nT=1:STIM.NoOfTargets;
-                else
-                    nT=STIM.Conditions(Trials(TR),3);
-                end
-                % draw targets
-                for nT=nT
-                    % grating
-                    Screen('DrawTexture',STIM.Screen.window, ...
-                        STIM.Target.GratingTexture{2}, ...
-                        SRect,TRect{nT},...
-                        TargetDrawAngles(nT));
-                    % mask
-                    Screen('DrawTexture',STIM.Screen.window, ...
-                        STIM.Target.MaskTexture, ...
-                        SRect,TRect{nT},...
-                        TargetDrawAngles(nT));
+                    FirstFlipDone = true;
                 end
 
-                % draw fixation
-                Screen('FillOval', STIM.Screen.window,...
-                    STIM.Fix.Color.*STIM.Screen.white,FixRect);
-
-                % draw reward indicators if required
-                if STIM.Conditions(Trials(TR),1)==4 && ...
-                        vbl >= StartTest-STIM.Screen.FrameDur+STIM.Reward.Indicator.TimeOffset/1000  && ...
-                        (STIM.Reward.Indicator.Duration==0 || ...
-                        vbl < StartTest+STIM.Reward.Indicator.Duration/1000)
-                    for nT=1:STIM.NoOfTargets
-                        % cue
-                        Screen('FrameOval',STIM.Screen.window, ...
-                            STIM.Reward.Indicator.Colors(RVS_TLS(nT,1),:).*...
-                            STIM.Screen.white, ...
-                            TRect2{nT},STIM.Reward.Indicator.LineWidth*...
-                            STIM.Screen.Deg2Pix);
-                    end
-                    % Detect cue onset
-                    if CueOnsetDetected == 0
-                        CueOnsetDetected  = 1;
-                    end
-                else % draw neutral circle
-                    for nT=1:STIM.NoOfTargets
-                        Screen('FrameOval',STIM.Screen.window, ...
-                            STIM.Reward.Indicator.NeutralColor.*...
-                            STIM.Screen.white, ...
-                            TRect2{nT},STIM.Reward.Indicator.LineWidth*...
-                            STIM.Screen.Deg2Pix);
-                    end
-                end
-
-                % detect mouse button 1
-                while (1) && FirstTestFlipDone && ...
-                        ResponseCollected==0 && QuitScript==0
-                    [x0,y0,buttons] = GetMouse(STIM.Screen.window);
-                    if buttons(1)
-                        break;
-                    end
-                    % Record keypress as response
-                    [keyIsDown,secs,keyCode]=KbCheck;
-                    if keyIsDown
-                        if keyCode(KeyBreak) %break when escape is pressed
-                            QuitScript=1;break;
-                        else
-                            ResponseCollected=1;
-                            LOG.Block(LOG.SesNr).Trial(TR).RespAngle=...
-                                AngleToDraw;
-                            vbl = Screen('Flip', STIM.Screen.window);
-                        end
-                    end
-                end
-
-                while (1) && FirstTestFlipDone && ...
-                        ResponseCollected==0 && QuitScript==0
-                    [x,y,buttons] = GetMouse(STIM.Screen.window);
-                    if ~buttons(1)
-                        break;
-                    end
-                    if x ~= x0
-                        dx=x0-x; %pos:ccw, neg:cw
-                        dAngle=dx;
-                        AngleToDraw=Angle0-dAngle;
-                        % clear screen
-                        Screen('FillRect',STIM.Screen.window,STIM.BackColor*STIM.Screen.white);
-
-                        % draw fixation
-                        Screen('FillOval', STIM.Screen.window,...
-                            STIM.Fix.Color.*STIM.Screen.white,FixRect);
-
-                        % grating
-                        Screen('DrawTexture',STIM.Screen.window, ...
-                            STIM.Target.GratingTexture{2}, ...
-                            SRect,TRect{STIM.Conditions(Trials(TR),3)},...
-                            AngleToDraw);
-                        % mask
-                        Screen('DrawTexture',STIM.Screen.window, ...
-                            STIM.Target.MaskTexture, ...
-                            SRect,TRect{STIM.Conditions(Trials(TR),3)},...
-                            AngleToDraw);
-
-                        % draw reward indicators if required
-                        if STIM.Conditions(Trials(TR),1)==4
-                            for nT=1:STIM.NoOfTargets
-                                % cue
-                                Screen('FrameOval',STIM.Screen.window, ...
-                                    STIM.Reward.Indicator.Colors(RVS_TLS(nT,1),:).*...
-                                    STIM.Screen.white, ...
-                                    TRect2{nT},STIM.Reward.Indicator.LineWidth*...
-                                    STIM.Screen.Deg2Pix);
-                            end
-                            % Detect cue onset
-                            if CueOnsetDetected == 0
-                                CueOnsetDetected  = 1;
-                            end
-                        else % draw neutral circle
-                            for nT=1:STIM.NoOfTargets
-                                Screen('FrameOval',STIM.Screen.window, ...
-                                    STIM.Reward.Indicator.NeutralColor.*...
-                                    STIM.Screen.white, ...
-                                    TRect2{nT},STIM.Reward.Indicator.LineWidth*...
-                                    STIM.Screen.Deg2Pix);
-                            end
-                        end
-                        vbl = Screen('Flip', STIM.Screen.window, 0, 1);
-                    end
-                    % Record keypress as response
-                    [keyIsDown,secs,keyCode]=KbCheck;
-                    if keyIsDown
-                        if keyCode(KeyBreak) %break when escape is pressed
-                            QuitScript=1;break;
-                        else
-                            ResponseCollected=1;
-                            LOG.Block(LOG.SesNr).Trial(TR).RespAngle=...
-                                AngleToDraw;
-                            Screen('FillRect',STIM.Screen.window,...
-                                STIM.BackColor*STIM.Screen.white);
-                            vbl = Screen('Flip', STIM.Screen.window);
-                        end
-                    end
-                end
-
-                % Flip the screen buffer and get timestamp
-                vbl = Screen('Flip', STIM.Screen.window);
-                if FirstTestFlipDone == 0
-                    StartTest = vbl;
-                    FirstTestFlipDone = 1;
-                    % Log test onset
-                    LOG.Block(LOG.SesNr).Trial(TR).TestOnset = StartTest;
+                if ~CueOnLog
+                    % Log stim-phase onset
+                    LOG.Trial(TR).CueOnset = ...
+                        vbl - LOG.ExpOnset;
                     % send message to eyelink
                     if HARDWARE.EyelinkConnected
-                        Eyelink('Message', 'StartTest');
+                        Eyelink('Message', 'Cue');
                     end
+                    CueOnLog = true;
                 end
 
-                % Log cue onset
-                if CueOnsetDetected == 1
-                    LOG.Block(LOG.SesNr).Trial(TR).CueOnset = vbl;
-                    CueOnsetDetected  = 2;
+                if ~ImageOnLog
+                    % Log stim-phase onset
+                    LOG.Trial(TR).CueOnset = ...
+                        vbl - LOG.ExpOnset;
+                    % send message to eyelink
+                    if HARDWARE.EyelinkConnected
+                        Eyelink('Message', 'StimImg');
+                    end
+                    ImageOnLog = true;
                 end
+
             end
+
+
+
+
 
             %% Feedback
-            StartFeedback=vbl;FirstFBFlipDone=0;
+            StartFeedback=GetSecs;
+
+            % check if response is correct or not
+            % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+            % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+            if LOG.Trial(TR).Resp
+
+            % display feedback text
+            % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+            % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+
+            % play sound
+            % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+            % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+
+            % check timing
+            while GetSecs < StartFeedback + STIM.Times.Feedback/1000 && ...
+                    ~QuitScript
+                % wait
+            end
 
             %Start drawing
             while vbl<StartFeedback+STIM.Timing(5)/1000 && QuitScript==0
 
-                % convert angles to 0-180 range
-                RespAng=AngleToDraw;
-                StimAng=STIM.Conditions(Trials(TR),4);
-                while RespAng < 0
-                    RespAng=RespAng+180;
-                end
-                while RespAng > 180
-                    RespAng=RespAng-180;
-                end
-                while StimAng < 0
-                    StimAng=StimAng+180;
-                end
-                while StimAng > 180
-                    StimAng=StimAng-180;
-                end
-
-                LOG.Block(LOG.SesNr).Trial(TR).StimAngle_RespAngle = ...
-                    [StimAng RespAng];
+                
 
                 % If first frame, check if correct response
                 if FirstFBFlipDone==0
@@ -1067,6 +679,19 @@ try
                     LOG.Block(LOG.SesNr).Trial(TR).Correct=Correct;
                 end
             end
+        
+            %% ITI
+            StartITI=GetSecs;
+
+            % empty screen
+            % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+            % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+
+            % check timing
+            while GetSecs < StartITI + STIM.Times.ITI/1000
+                % wait
+            end
+        
         end
     end
     
