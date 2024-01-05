@@ -435,7 +435,7 @@ try
 
             % Fixation phase all but first frame
             while vbl < LOG.Trial(TR).FixOnset + ...
-                    STIM.Times.Fix/1000 && ~QuitScript
+                    STIM.Times.Fix/1000 && FixatingNow && ~QuitScript
 
                 % Draw fix dot
                 Screen('FillOval', STIM.Screen.window,...

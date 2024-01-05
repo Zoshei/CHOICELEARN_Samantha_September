@@ -159,6 +159,7 @@ STIM.RequireFixToStart = false; % this can be useful to ensure fixation, but
 % make sure the Eyelink works well enough to not make this frustrating
 STIM.FixWindowRadius = 1.5; % dva
 STIM.MaxDurFixCheck = 60;
+STIM.RequireContFix = false;
 
 % TRIALS ----------------
 STIM.Trials.imgpos =  [...
