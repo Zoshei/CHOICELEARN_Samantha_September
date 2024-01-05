@@ -19,7 +19,6 @@ HARDWARE.MeasureFixEveryNthTrials = 20; % Only works WITH eyelink
 % To be sure about eye-tracking accuracy we can use repeated calibration
 
 %% BACKGROUND & FIXATION ================================================
-
 % Background color
 STIM.BackColor = [0.5 0.5 0.5]; % [R G B] range: 0-1
 
@@ -30,6 +29,12 @@ STIM.Fix.Size = .3;
 STIM.Fix.Color = [0 0 0]; % [R G B] range: 0-1
 
 %% STIMULUS INFO ========================================================
+% NB! For positions, note that shifting rightwards and downwards are 
+% are positive and we define relative to the center of the screen.
+% [0 0] is center
+% [-5 -5] is left of and above the center
+% [ 5  5] is right of and below the center
+
 % stimuli will be bitmap images 
 STIM.bitmapdir = 'images';
 
@@ -39,19 +44,19 @@ STIM.Key2 = '0)';
 
 % relevant ----
 STIM.img(1).fn = '1.bmp';
-STIM.img(1).correctresp = STIM.Key1; %STIM.Key1/STIM.Key2/undefined
+STIM.img(1).correctresp = 1; %1/2/undefined
 STIM.img(1).points = 10;
 
 STIM.img(2).fn = '2.bmp';
-STIM.img(2).correctresp = STIM.Key1; %STIM.Key1/STIM.Key2/undefined
+STIM.img(2).correctresp = 1; 
 STIM.img(2).points = 0;
 
 STIM.img(3).fn = '3.bmp';
-STIM.img(3).correctresp = STIM.Key2; %STIM.Key1/STIM.Key2/undefined
+STIM.img(3).correctresp = 2; 
 STIM.img(3).points = 10;
 
 STIM.img(4).fn = '4.bmp';
-STIM.img(4).correctresp = STIM.Key2; %STIM.Key1/STIM.Key2/undefined
+STIM.img(4).correctresp = 2; 
 STIM.img(4).points = 0;
 
 % cued distractor ----
@@ -73,19 +78,19 @@ STIM.img(8).points = 0;
 
 % redundant ----
 STIM.img(9).fn = '9.bmp';
-STIM.img(9).correctresp = STIM.Key1; %STIM.Key1/STIM.Key2/undefined
+STIM.img(9).correctresp = 1; 
 STIM.img(9).points = 10;
 
 STIM.img(10).fn = '10.bmp';
-STIM.img(10).correctresp = STIM.Key1; %STIM.Key1/STIM.Key2/undefined
+STIM.img(10).correctresp = 1; 
 STIM.img(10).points = 0;
 
 STIM.img(11).fn = '11.bmp';
-STIM.img(11).correctresp = STIM.Key2; %STIM.Key1/STIM.Key2/undefined
+STIM.img(11).correctresp = 2; 
 STIM.img(11).points = 10;
 
 STIM.img(12).fn = '12.bmp';
-STIM.img(12).correctresp = STIM.Key2; %STIM.Key1/STIM.Key2/undefined
+STIM.img(12).correctresp = 2; 
 STIM.img(12).points = 0;
 
 % uncued distractor ----
@@ -157,7 +162,7 @@ STIM.Times.ITI = 500; % ms after response or stim stop
 
 STIM.RequireFixToStart = false; % this can be useful to ensure fixation, but
 % make sure the Eyelink works well enough to not make this frustrating
-STIM.FixWindowRadius = 1.5; % dva
+STIM.Fix.WindowRadius = 1.5; % dva
 STIM.MaxDurFixCheck = 60;
 STIM.RequireContFix = false;
 
@@ -167,7 +172,7 @@ STIM.Trials.imgpos =  [...
     -5 -5;...
      5  5;...
      5 -5 ...
-     ]; % [H V] dva relative to fix 
+     ]; % [H V] dva relative to fix  
 STIM.Trials.imgsz = [4 4]; % [H V] dva
 
 % |-----------|
@@ -208,6 +213,7 @@ STIM.snddir = 'snd';
 % Vertical location and size of center feedback text
 STIM.Feedback.TextY = 0; %pix
 STIM.Feedback.TextSize = 20; %pix
+
 STIM.Feedback.TextCorrect = 'CORRECT response!';
 STIM.Feedback.TextCorrectCol = [0 0 0];
 STIM.Feedback.SoundCorrect = {'correct0.wav','correct.wav'}; %{low high}
@@ -216,4 +222,12 @@ STIM.Feedback.TextWrong = 'WRONG response!';
 STIM.Feedback.TextWrongCol = [0 0 0];
 STIM.Feedback.SoundWrong = 'wrong.wav';
 
-STIM.Feedback.PerformanceLevel = true;
+% give performance feedback occasionally
+STIM.Feedback.PerfShow = false;
+STIM.Feedback.PerfOverLastNTrials = 50;
+STIM.Feedback.PerfShowEveryNTrials = 10;
+STIM.Feedback.PerfLevels = {...
+    50, 'Apprentice';...
+    70, 'Warrior';...
+    90, 'Champion';...
+    100, 'Wizzard'};

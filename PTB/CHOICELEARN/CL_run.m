@@ -4,19 +4,18 @@ function CL_run(Debug)
 % CHOICE_LEARNING experiment
 % Questions: c.klink@nin.knaw.nl
 
-% Response: choose A or B (learn cue-response)
+% Response: choose one of two keys (learn cue-response)
 
 % In short:
-% - A fixation cross is presented
-% - A number of stimuli are presented with a attention cue
+% - A fixation dot is presented
+% - A number of stimuli are presented with an attention cue
 % - In the reponse phase, subjects say A or B
 % - Feedback can be provided on whether this was correct
 % - Blockwise chunking of stimulus sets is possible
 %==========================================================================
 
-clear all; 
-clc;
-QuitScript = false;
+clear all; %#ok<*CLALL>
+clc; QuitScript = false;
 
 if nargin < 1
     Debug = false;
@@ -40,7 +39,7 @@ try
         LOG.Gender = 'x';
         LOG.Age = 0;
         LOG.Handedness = 'R';
-        LOG.DateTimeStr = datestr(datetime('now'), 'yyyyMMdd_HHmm');
+        LOG.DateTimeStr = datestr(datetime('now'), 'yyyyMMdd_HHmm'); %#ok<*DATST>
     else
         % Get registration info & check against existing data
         LOG.Subject = [];
@@ -59,7 +58,7 @@ try
         LOG.DateTimeStr = datestr(datetime('now'), 'yyyyMMdd_HHmm');
     end
 
-    if HARDWARE.EyelinkConnected
+    if HARDWARE.EyelinkConnected %#ok<*USENS>
         % Try to initialize EYELINK (if fails exit)
         fprintf('Initializing EYELINK...')
         if EyelinkInit() ~= 1 % PTB-3 function
@@ -81,7 +80,7 @@ try
     HideCursor;
 
     %Define response keys
-    Key1 = KbName(STIM.Key1);
+    Key1 = KbName(STIM.Key1); %#ok<*NODEF>
     Key2 = KbName(STIM.Key2);
     KeyFix = KbName('space');
 
@@ -214,13 +213,13 @@ try
     % experiment
 
     uniquetrials = unique(LOG.TrialList(:,1));
-    allimages = [];
+    allimages = []; 
     for ut = uniquetrials'
-        allimages = [allimages, STIM.Trials.trial(ut).images];
+        allimages = [allimages, STIM.Trials.trial(ut).images]; %#ok<*AGROW>
     end
     uniqueimages = unique(allimages);
 
-    % pre-allocate cariable for all possible images
+    % pre-allocate variable for all possible images
     for i = 1: length(STIM.img)
         STIM.img(i).img = [];
         STIM.img(i).tex = [];
@@ -231,6 +230,15 @@ try
         STIM.img(ui).img = imread(fullfile(STIM.bitmapdir,STIM.img(ui).fn));
         STIM.img(ui).tex = MakeTexture(STIM.Screen.window,STIM.img(ui).img);
     end
+
+    % calculate the rects for image placement
+    for i = 1: size(STIM.Trials.imgpos,1)
+        ImageRect{i} = CenterRectOnPoint([0 0 ...
+            STIM.Trials.imgsz(1)*STIM.Screen.Deg2Pix ...
+            STIM.Trials.imgsz(2)*STIM.Screen.Deg2Pix], ...
+            STIM.Screen.Center(1)+STIM.Trials.imgpos(i,1)*STIM.Screen.Deg2Pix,...
+            STIM.Screen.Center(2)+STIM.Trials.imgpos(i,2)*STIM.Screen.Deg2Pix);
+    end      
 
     % load the sounds we need
     [snd(1).wav,snd(1).fs] = audioread(fullfile(STIM.snddir,...
@@ -244,11 +252,14 @@ try
     LOG.FileName = [LOG.Subject '_' DataFolder '_' LOG.DateTimeStr];
 
     % Create the fixation dot area
-    FixRect = ...
-        [STIM.Screen.Center(1)-STIM.Fix.Size*STIM.Screen.Deg2Pix/2 ...
-        STIM.Screen.Center(2)-STIM.Fix.Size*STIM.Screen.Deg2Pix/2 ...
-        STIM.Screen.Center(1)+STIM.Fix.Size*STIM.Screen.Deg2Pix/2 ...
-        STIM.Screen.Center(2)+STIM.Fix.Size*STIM.Screen.Deg2Pix/2];
+    FixRect = CenterRectOnPoint([0 0 ...
+        STIM.Fix.Size*STIM.Screen.Deg2Pix ...
+        STIM.Fix.Size*STIM.Screen.Deg2Pix ],...
+        STIM.Screen.Center(1),STIM.Screen.Center(2));
+    FixWinRect = CenterRectOnPoint([0 0 ...
+        2*STIM.Fix.WindowRadius*STIM.Screen.Deg2Pix ...
+        2*STIM.Fix.WindowRadius*STIM.Screen.Deg2Pix], ...
+        STIM.Screen.Center(1),STIM.Screen.Center(2));
 
     % Initiate the side-cues
     for c = 1:length(STIM.cue)
@@ -298,7 +309,8 @@ try
         cd(StartFolder);
     end
 
-    % Run the trials
+    %% Run the trials
+    CorrResp = [];
     for TR = 1:size(LOG.TrialList,1)
         if QuitScript
             break;
@@ -394,6 +406,8 @@ try
             end
 
             % Draw the fixation dot
+            Screen('FillRect',STIM.Screen.window,...
+                    STIM.BackColor*STIM.Screen.white);
             Screen('FillOval', STIM.Screen.window,...
                 STIM.Fix.Color.*STIM.Screen.white,FixRect);
             vbl = Screen('Flip', STIM.Screen.window);
@@ -405,19 +419,18 @@ try
                 while ~FixatingNow && GetSecs < (FixCheckStart + STIM.MaxDurFixCheck)
                     % GET EYE POSITION
                     if Eyelink('NewFloatSampleAvailable') > 0
-                        eyepos = Eyelink('NewestFloatSample');
+                        evt = Eyelink('NewestFloatSample');
                         % eyepos.gx(1),eyepos.gy(1) are x ,y;
                         % eyes can be missing
                         if evt.gx(1) < -10000 % pupil is not measured
                             % 'No eye-signal. Try again or ask for help.';
+                        else
+                            % CHECK IF IT'S WITHIN FIX WINDOW
+                            if IsInRect(evt.gx(1),evt.gy(1),FixWinRect)
+                                FixatingNow = true;
+                            end
                         end
                     end
-
-                   % CHECK IF IT'S WITHIN FIX WINDOW
-                   eye_ecc = sqrt(eyepos.gx(1)^2 + eyepos.gy(1)^2);
-                   if eye_ecc < STIM.FixWindowRadius*STIM.Screen.Deg2Pix
-                        FixatingNow = true;
-                   end
                 end
                 if ~FixatingNow
                     % fixation check timed out
@@ -429,17 +442,36 @@ try
                 FixatingNow = true;
             end
 
-
-
-
-
             % Fixation phase all but first frame
-            while vbl < LOG.Trial(TR).FixOnset + ...
+            while vbl - LOG.ExpOnset < LOG.Trial(TR).FixOnset + ...
                     STIM.Times.Fix/1000 && FixatingNow && ~QuitScript
 
                 % Draw fix dot
+                Screen('FillRect',STIM.Screen.window,...
+                    STIM.BackColor*STIM.Screen.white);
                 Screen('FillOval', STIM.Screen.window,...
                     STIM.Fix.Color.*STIM.Screen.white,FixRect);
+
+                % Check fixation
+                if STIM.RequireContFix
+                    if Eyelink('NewFloatSampleAvailable') > 0
+                        evt = Eyelink('NewestFloatSample');
+                        % eyepos.gx(1),eyepos.gy(1) are x ,y;
+                        % eyes can be missing
+                        if evt.gx(1) < -10000 % pupil is not measured
+                            % 'No eye-signal. Try again or ask for help.';
+                            fprintf('Eye not detected\n')
+                        else
+                            if IsInRect(evt.gx(1),evt.gy(1),FixWinRect)
+                                FixatingNow = true;
+                            else
+                                FixatingNow = false;
+                            end
+                        end
+                    else
+                        fprintf('No eye-samples available\n')
+                    end
+                end
 
                 % Flip the screen buffer and get timestamp
                 vbl = Screen('Flip', STIM.Screen.window);
@@ -447,33 +479,47 @@ try
 
 
             %% Cue/Image-phase
-            StartStim = vbl; 
+            LOG.Trial(TR).StimPhaseOnset = vbl - LOG.ExpOnset; 
             MaxDur = max([STIM.Times.Cue(2) STIM.Times.Stim(2)]);
             ResponseGiven = false;
 
             FirstFlipDone = false;
             CueOn = false; CueOnLog = false;
             ImageOn = false; ImageOnLog = false;
-            
 
-            while vbl < (LOG.Trial(TR).FixOnset + MaxDur/1000) && ...
-                    ~ResponseGiven && ~QuitScript
+            while vbl - LOG.ExpOnset < ...
+                    (LOG.Trial(TR).StimPhaseOnset + MaxDur/1000) && ...
+                    ~ResponseGiven  && FixatingNow && ~QuitScript
+                % background --
+                Screen('FillRect',STIM.Screen.window,...
+                    STIM.BackColor*STIM.Screen.white);
 
                 % CUE --
-                if vbl > LOG.Trial(TR).FixOnset + ...
+                if vbl - LOG.ExpOnset > LOG.Trial(TR).StimPhaseOnset + ...
                         STIM.Times.Cue/1000 && ~QuitScript
-                    % Draw cues
-                    % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
-                    % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+                    % Draw cue
+                    tidx = LOG.TrialList(TR,1);
+                    cidx = STIM.Trials.trial(tidx).cue;
+                    switch STIM.cue(c).type
+                        case 'line'
+                            Screen('FillRect', STIM.Screen.window,...
+                                STIM.cue(cidx).Color.*STIM.Screen.white,...
+                                STIM.cue(cidx).rect);
+                        case 'something else'
+                            % keep this open for alternative cue types
+                    end
                     CueOn = true;
                 end
 
                 % IMAGES --
-                if vbl > LOG.Trial(TR).FixOnset + ...
+                if vbl - LOG.ExpOnset > LOG.Trial(TR).StimPhaseOnset + ...
                         STIM.Times.Stim/1000 && ~QuitScript
                     % Draw stim images
-                    % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
-                    % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+                    tidx = LOG.TrialList(TR,1);
+                    for imagei = STIM.Trials.trial(tidx).images
+                        Screen('DrawTexture', STIM.Screen.window,...
+                            STIM.img(imagei).tex,[],ImageRect{imagei})
+                    end
                     ImageOn = true;
                 end
 
@@ -488,10 +534,10 @@ try
                 if keyIsDown && ~KeyWasDown
                     if keyCode(KeyBreak) %break when esc
                         QuitScript=1;break;
-                    elseif keyCode(KeyL1) || keyCode(KeyL2)
+                    elseif keyCode(Key1)
                         LOG.Trial(TR).Response = 'left';
                         LOG.Trial(TR).Resp = 1;
-                    elseif keyCode(KeyR1) || keyCode(KeyR2)
+                    elseif keyCode(Key2)
                         LOG.Trial(TR).Response = 'right';
                         LOG.Trial(TR).Resp = 2;
                     end
@@ -502,9 +548,26 @@ try
                     end
                 end
 
-                % FLIP SCREEN --
-                % Flip the screen buffer and get timestamp
-                vbl = Screen('Flip', STIM.Screen.window);
+                % CHECK FIXATION --
+                if STIM.RequireContFix
+                    if Eyelink('NewFloatSampleAvailable') > 0
+                        evt = Eyelink('NewestFloatSample');
+                        % eyepos.gx(1),eyepos.gy(1) are x ,y;
+                        % eyes can be missing
+                        if evt.gx(1) < -10000 % pupil is not measured
+                            % 'No eye-signal. Try again or ask for help.';
+                            fprintf('Eye not detected\n')
+                        else
+                            if IsInRect(evt.gx(1),evt.gy(1),FixWinRect)
+                                FixatingNow = true;
+                            else
+                                FixatingNow = false;
+                            end
+                        end
+                    else
+                        fprintf('No eye-samples available\n')
+                    end
+                end
 
                 % LOG --
                 if ~FirstFlipDone
@@ -540,168 +603,133 @@ try
                     ImageOnLog = true;
                 end
 
+                % FLIP SCREEN --
+                vbl = Screen('Flip', STIM.Screen.window);
             end
-
-
-
 
 
             %% Feedback
             StartFeedback=GetSecs;
+            LOG.Trial(TR).FeedbackOnset = vbl - LOG.ExpOnset; 
 
             % check if response is correct or not
-            % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
-            % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
-            if LOG.Trial(TR).Resp
+            imagei = STIM.Trials.trial(tidx).targ;
+            if LOG.Trial(TR).Resp == STIM.img(imagei).correctresp
+                % correct
+                CorrectResponse = true;
+                nPoints = STIM.img(imagei).points;
+            else
+                % wrong
+                CorrectResponse = false;
+            end
+            LOG.Trial(TR).RespCorr = CorrectResponse;
+            CorrResp = [CorrResp; CorrectResponse];
 
-            % display feedback text
-            % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
-            % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+            % display feedback text --
+            % set text to be bigger
+            oldTextSize=Screen('TextSize', STIM.Screen.window,...
+                STIM.Feedback.TextSize(1));
+            oldTextStyle=Screen('TextStyle',STIM.Screen.window,1); %bold
+            % background
+            Screen('FillRect',STIM.Screen.window,...
+                    STIM.BackColor*STIM.Screen.white);
+            if CorrectResponse
+                DrawFormattedText(STIM.Screen.window,...
+                    [STIM.Feedback.TextCorrect '\n' num2str(nPoints) 'points'],...
+                    'center',STIM.Screen.Center(2)-STIM.Feedback.TextY(1),...
+                    STIM.Feedback.TextCorrectCol.*STIM.Screen.white);
+            else
+                DrawFormattedText(STIM.Screen.window,...
+                    STIM.Feedback.TextWrong,...
+                    'center',STIM.Screen.Center(2)-STIM.Feedback.TextY(1),...
+                    STIM.Feedback.TextWrongCol.*STIM.Screen.white);
+            end
+            % Set text size back to small
+            Screen('TextSize', STIM.Screen.window,oldTextSize);
+            Screen('TextStyle',STIM.Screen.window,0);
+            vbl = Screen('Flip', STIM.Screen.window);
+            
+            % play sound --
+            if CorrectResponse
+                if nPoints == 0
+                    sound(snd(1).wav,snd(1).fs);
+                else
+                    sound(snd(2).wav,snd(2).fs);
+                end
+            else
+                sound(snd(3).wav,snd(3).fs);
+            end
 
-            % play sound
-            % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
-            % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
-
-            % check timing
+            % check timing --
             while GetSecs < StartFeedback + STIM.Times.Feedback/1000 && ...
                     ~QuitScript
                 % wait
             end
 
-            %Start drawing
-            while vbl<StartFeedback+STIM.Timing(5)/1000 && QuitScript==0
 
-                
-
-                % If first frame, check if correct response
-                if FirstFBFlipDone==0
-                    RespDev=StimAng-RespAng;
-                end
-
-                if abs(RespDev) <= ...
-                        STIM.Feedback.CorrectThreshold  && ...
-                        FirstFBFlipDone==0
-                    % correct
-                    % check reward amount
-                    RewardMagnitude=...
-                        STIM.Reward.Values(STIM.Conditions(Trials(TR),2));
-                    % prepare a number of dots equal to magnitude
-                    AreaR = STIM.Feedback.AreaSize/2* STIM.Screen.Deg2Pix;
-                    AnglesRew = rand(RewardMagnitude,1)*2*pi;
-                    RadiusRew = rand(RewardMagnitude,1)*AreaR;
-                    [RewX,RewY] = pol2cart(AnglesRew,RadiusRew);
-                    RewY = RewY-...
-                        (STIM.Feedback.AreaY*STIM.Screen.Deg2Pix);
-                    Correct=1;
-                    TotalReward = TotalReward + RewardMagnitude;
-                    PotentialTotalReward = ...
-                        PotentialTotalReward + RewardMagnitude;
-                elseif FirstFBFlipDone==0 %wrong
-                    Correct=0;
-                    PotentialTotalReward = ...
-                        PotentialTotalReward + ...
-                        STIM.Reward.Values(STIM.Conditions(Trials(TR),2));
-                end
-                % set text to be bigger
-                oldTextSize=Screen('TextSize', STIM.Screen.window,...
-                    STIM.Feedback.TextSize(1));
-                oldTextStyle=Screen('TextStyle',STIM.Screen.window,1); %bold
-
-                if Correct
-                    if STIM.Feedback.DotColorMatchesText
-                        DotColor = ...
-                            STIM.Reward.Indicator.Colors(RVS_TLS_ORG(1,1),:)...
-                            *STIM.TextIntensity;
-                    else
-                        DotColor = STIM.Feedback.DotColor*STIM.Screen.white;
+            %% PERFORMANCE FEEDBACK
+            if STIM.Feedback.PerfShow
+                if TR > STIM.Feedback.PerfOverLastNTrials && ...
+                        mod(TR,STIM.Feedback.PerfShowEveryNTrials) == 0
+                    % calculate performance level
+                    perfperc = 100*(...
+                        sum(CorrResp(end-(STIM.Feedback.PerfOverLastNTrials-1):end))./...
+                        STIM.Feedback.PerfOverLastNTrials);
+                    % which category
+                    i = 1;
+                    while perfperc <= STIM.Feedback.PerfLevels{i,1}
+                        perfclass = STIM.Feedback.PerfLevels{i,2};
+                        i=i+1;
                     end
+                    % give as feedback
+                    % set text to be bigger
+                    oldTextSize=Screen('TextSize', STIM.Screen.window,...
+                        STIM.Feedback.TextSize(1));
+                    oldTextStyle=Screen('TextStyle',STIM.Screen.window,1); %bold
+                    % background
+                    Screen('FillRect',STIM.Screen.window,...
+                        STIM.BackColor*STIM.Screen.white);
 
-                    % draw a number of dots equal to magnitude
-                    if ~isempty(RewX)
-                        Screen('DrawDots', STIM.Screen.window,...
-                            [RewX';RewY'], ...
-                            STIM.Feedback.DotSize*STIM.Screen.Deg2Pix,...
-                            DotColor(1:3),STIM.Screen.Center ,1);
-                    end
-                    % write reward obtained in text
                     DrawFormattedText(STIM.Screen.window,...
-                        ['Correct: +' num2str(RewardMagnitude)],...
-                        'center',STIM.Screen.Center(2)-...
-                        STIM.Feedback.TextY(1),...
-                        DotColor(1:3));
+                        [num2str(floor(perfperc)) '% correct\nPsychophysics ' perfclass],...
+                        'center',STIM.Screen.Center(2)-STIM.Feedback.TextY(1),...
+                        STIM.Feedback.TextCorrectCol.*STIM.Screen.white);
 
-                    Screen('TextSize', STIM.Screen.window,...
-                        STIM.Feedback.TextSize(2));
+                    % Set text size back to small
+                    Screen('TextSize', STIM.Screen.window,oldTextSize);
                     Screen('TextStyle',STIM.Screen.window,0);
+                    vbl = Screen('Flip', STIM.Screen.window);
+                    StartPerfFB = GetSecs;
 
-                    DrawFormattedText(STIM.Screen.window,...
-                        [num2str(TotalReward) ' / ' ...
-                        num2str(PotentialTotalReward)],...
-                        'center',STIM.Screen.Center(2)-...
-                        STIM.Feedback.TextY(2),...
-                        DotColor(1:3));
-                else %wrong
-                    % write reward obtained in text
-                    DrawFormattedText(STIM.Screen.window,...
-                        'Wrong: 0','center',STIM.Screen.Center(2)-...
-                        STIM.Feedback.TextY(1),...
-                        STIM.Feedback.DotColor*STIM.TextIntensity);
-
-                    Screen('TextSize', STIM.Screen.window,...
-                        STIM.Feedback.TextSize(2));
-                    Screen('TextStyle',STIM.Screen.window,0);
-
-                    DrawFormattedText(STIM.Screen.window,...
-                        [num2str(TotalReward) ' / ' ...
-                        num2str(PotentialTotalReward)],...
-                        'center',STIM.Screen.Center(2)-...
-                        STIM.Feedback.TextY(2),...
-                        STIM.Feedback.DotColor*STIM.TextIntensity);
-                end
-                % Set text size back to small
-                Screen('TextSize', STIM.Screen.window,oldTextSize);
-                Screen('TextStyle',STIM.Screen.window,0);
-
-                % Flip the screen buffer and get timestamp
-                vbl = Screen('Flip', STIM.Screen.window);
-                if FirstFBFlipDone == 0
-                    StartFeedback = vbl;
-                    FirstFBFlipDone = 1;
-                    % Log test onset
-                    LOG.Block(LOG.SesNr).Trial(TR).FeedBackOnset = ...
-                        StartFeedback;
-                    % send message to eyelink
-                    if HARDWARE.EyelinkConnected
-                        Eyelink('Message', 'StartFeedback');
+                    % check timing --
+                    while GetSecs < StartPerfFB + STIM.Times.Feedback/1000 && ...
+                            ~QuitScript
+                        % wait
                     end
-                    % Log correct
-                    LOG.Block(LOG.SesNr).Trial(TR).RespDev=RespDev;
-                    LOG.Block(LOG.SesNr).Trial(TR).Correct=Correct;
                 end
             end
-        
+
             %% ITI
             StartITI=GetSecs;
 
             % empty screen
-            % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
-            % XXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+            Screen('FillRect',STIM.Screen.window,...
+                    STIM.BackColor*STIM.Screen.white);
 
             % check timing
             while GetSecs < StartITI + STIM.Times.ITI/1000
                 % wait
             end
-        
         end
     end
     
-    
-    
-    if QuitScript == 0
+    %% WRAP UP
+    if ~QuitScript
         vbl = Screen('Flip', STIM.Screen.window);
-        DrawFormattedText(STIM.Screen.window,...
-            'Thank you!','center','center',...
-            [1 0 0]*STIM.TextIntensity);
+        Screen('FillRect',STIM.Screen.window,...
+                    STIM.BackColor*STIM.Screen.white);
+        DrawFormattedText(STIM.Screen.window,'Thank you!',...
+            'center','center',[1 0 0]*STIM.TextIntensity);
         vbl = Screen('Flip', STIM.Screen.window);
         % send message to eyelink
         if HARDWARE.EyelinkConnected
@@ -710,6 +738,8 @@ try
         pause(2)
     else
         vbl = Screen('Flip', STIM.Screen.window);
+        Screen('FillRect',STIM.Screen.window,...
+                    STIM.BackColor*STIM.Screen.white);
         DrawFormattedText(STIM.Screen.window,...
             'Exiting...','center','center',STIM.TextIntensity);
         vbl = Screen('Flip', STIM.Screen.window);
@@ -717,17 +747,13 @@ try
     pause(.5)
 
     %% Save the data
-    % only save data when experiment is completed
-    save(LOG.FileName,'HARDWARE','STIM','LOG');
-
+    save(fullfile(StartFolder,DataFolder,LOG.FileName),'HARDWARE','STIM','LOG');
 
     %% Restore screen
-    Screen('LoadNormalizedGammaTable',...
-        STIM.Screen.ScrNr,OLD_Gamtable);
-    Screen('CloseAll');
-    ListenChar();ShowCursor;
+    Screen('LoadNormalizedGammaTable',STIM.Screen.ScrNr,OLD_Gamtable);
+    Screen('CloseAll');ListenChar();ShowCursor;
 
-    if QuitScript == 0
+    if ~QuitScript
         fprintf('All done! Thank you for participating\n');
     else
         fprintf('Quit the script by pressing escape\n');
@@ -735,23 +761,18 @@ try
 
     %% Close up Eyelink
     if HARDWARE.EyelinkConnected
-        cd 'Eyelink_Log';
+        cd(fullfile(StartFolder, DataFolder,'Eyelink_Log'))
         Eyelink('Stoprecording');
         Eyelink('Closefile');
-        if ~QuitScript || QuitScript % only save when experiment finished
-            eyelink_receive_file(EL.edfFile);
-            eval(['!rename ',EL.edfFile,'.edf ',LOG.FileName,'.edf'])
-            disp(['Eyedata data saved under the name: ' LOG.FileName])
-        end
+        eyelink_receive_file(EL.edfFile);
+        system(['!rename ',EL.edfFile,'.edf ',LOG.FileName,'.edf']) % was 'eval'
+        disp(['Eyedata data saved under the name: ' LOG.FileName])
         Eyelink('ShutDown');
-        cd(DataFolder);
+        cd(fullfile(StartFolder,DataFolder));
     end
 catch %#ok<CTCH> %if there is an error the script will go here
-    Screen('LoadNormalizedGammaTable',...
-        STIM.Screen.ScrNr,OLD_Gamtable);
-    Screen('CloseAll');
-    ListenChar();ShowCursor;
-    psychrethrow(psychlasterror);
+    Screen('LoadNormalizedGammaTable',STIM.Screen.ScrNr,OLD_Gamtable);
+    Screen('CloseAll');ListenChar();ShowCursor;psychrethrow(psychlasterror);
     %% Close up Eyelink
     if HARDWARE.EyelinkConnected
         Eyelink('Stoprecording');
