@@ -42,6 +42,9 @@ STIM.bitmapdir = 'images';
 STIM.Key1 = '1!';
 STIM.Key2 = '0)';
 
+% image size
+STIM.imgsz = [3 3];
+
 % relevant ----
 STIM.img(1).fn = '1.bmp';
 STIM.img(1).correctresp = 1; %1/2/undefined
@@ -135,15 +138,15 @@ STIM.img(16).points = 0;
 %% CUE INFO =============================================================
 % line pointing left or right
 STIM.cue(1).type = 'line';
-STIM.cue(1).dir = 'left';
+STIM.cue(1).dir = [-1 0]; % directional vector (x,y] 'left';
 STIM.cue(1).color = [1 0 0]; % RGB
-STIM.cue(1).sz = [0.5 0.05]; % [H V] dva
+STIM.cue(1).sz = [0.05 0.5]; % [width length] dva
 STIM.cue(1).pos = [-0.75 0]; % [H V] dva relative to fix
 
 STIM.cue(2).type = 'line';
-STIM.cue(2).dir = 'right';
+STIM.cue(2).dir = [1 0]; % directional vector (x,y] 'left';
 STIM.cue(2).color = [1 0 0]; % RGB
-STIM.cue(2).sz = [0.5 0.05]; % [H V] dva
+STIM.cue(2).sz = [0.05 0.5]; % [width length] dva
 STIM.cue(2).pos = [0.75 0]; % [H V] dva relative to fix
 
 %% EXPERIMENT STRUCTURE =================================================
@@ -167,25 +170,36 @@ STIM.MaxDurFixCheck = 60;
 STIM.RequireContFix = false;
 
 % TRIALS ----------------
-STIM.Trials.imgpos =  [...
+% can be any number of images as long there's a position defined for ll of
+% them
+STIM.Trials.trial(1).images = [ ...
+    1,...
+    5,...
+    13,...
+    9 ...
+    ] ; 
+STIM.Trials.trial(1).imgpos = [...
     -5  5;...
     -5 -5;...
      5  5;...
      5 -5 ...
      ]; % [H V] dva relative to fix  
-STIM.Trials.imgsz = [4 4]; % [H V] dva
 
-% |-----------|
-% | 1       3 |
-% |    FIX    |
-% | 2       4 |
-% |-----------|
-
-STIM.Trials.trial(1).images = [ 1, 5, 13, 9 ] ; % order matters!
 STIM.Trials.trial(1).cue = 1;
 STIM.Trials.trial(1).targ = 1; % the img index that is the target
-
-STIM.Trials.trial(2).images = [ 10, 14, 6, 2 ] ; % order matters!
+%--
+STIM.Trials.trial(2).images = [ ...
+    10,...
+    14,...
+    6,...
+    2....
+    ] ; 
+STIM.Trials.trial(2).imgpos = [...
+    -5  5;...
+    -5 -5;...
+     5  5;...
+     5 -5 ...
+     ]; % [H V] dva relative to fix  
 STIM.Trials.trial(2).cue = 2;
 STIM.Trials.trial(2).targ = 4; % the img index that is the target
 

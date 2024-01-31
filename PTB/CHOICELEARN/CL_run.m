@@ -14,14 +14,13 @@ function CL_run(Debug)
 % - Blockwise chunking of stimulus sets is possible
 %==========================================================================
 
-clear all; %#ok<*CLALL>
 clc; QuitScript = false;
 
 if nargin < 1
     Debug = false;
 end
-DebugRect = [0 0 1024 768];
 warning off; %#ok<*WNOFF>
+DebugRect = [0 0 1024 768];
 
 %% Read in variables ----------------------------------------------------
 % First get the settings
@@ -90,46 +89,7 @@ try
         KeyBreak = KbName('ESCAPE');
     end
     ListenChar(2);
-
-    % Get screen info
-    scr = Screen('screens');
-    STIM.Screen.ScrNr = max(scr); % use the screen with the highest #
-    % check this at the setup
-
-    % Gamma Correction to allow intensity in fractions
-    if HARDWARE.DoGammaCorrection
-        [OLD_Gamtable, dacbits, reallutsize] = ...
-            Screen('ReadNormalizedGammaTable', STIM.Screen.ScrNr);
-        GamCor = (0:1/255:1).^HARDWARE.GammaCorrection;
-        Gamtable = [GamCor;GamCor;GamCor]';
-        Screen('LoadNormalizedGammaTable',STIM.Screen.ScrNr, Gamtable);
-    end
-
-    % Get the screen size in pixels
-    [STIM.Screen.PixWidth, STIM.Screen.PixHeight] = ...
-        Screen('WindowSize',STIM.Screen.ScrNr);
-    % Get the screen size in mm
-    [STIM.Screen.MmWidth, STIM.Screen.MmHeight] = ...
-        Screen('DisplaySize',STIM.Screen.ScrNr);
-
-    % Get some basic color intensities
-    STIM.Screen.white = WhiteIndex(STIM.Screen.ScrNr);
-    STIM.Screen.black = BlackIndex(STIM.Screen.ScrNr);
-    STIM.Screen.grey = (STIM.Screen.white+STIM.Screen.black)/2;
-
-    % Define conversion factors
-    STIM.Screen.Mm2Pix=STIM.Screen.PixWidth/STIM.Screen.MmWidth;
-    STIM.Screen.Deg2Pix=(tand(1)*HARDWARE.DistFromScreen)*...
-        STIM.Screen.PixWidth/STIM.Screen.MmWidth;
-
-    % Determine color of on screen text and feedback
-    % depends on background color --> Black or white
-    if max(STIM.BackColor) > .5
-        STIM.TextIntensity = STIM.Screen.black;
-    else
-        STIM.TextIntensity = STIM.Screen.white;
-    end
-
+    
     % Open a double-buffered window on screen
     if Debug
         % for CK desktop linux; take one screen only
@@ -138,35 +98,73 @@ try
         WindowRect = []; %fullscreen
     end
 
-    [STIM.Screen.window, STIM.Screen.windowRect] = ...
-        Screen('OpenWindow',STIM.Screen.ScrNr,...
-        STIM.BackColor*STIM.Screen.white,WindowRect,[],2);
+    ScrNrs = Screen('screens');
+    HARDWARE.ScrNr = max(ScrNrs);
+
+    % Get some basic color intensities
+    HARDWARE.white = WhiteIndex(HARDWARE.ScrNr);
+    HARDWARE.black = BlackIndex(HARDWARE.ScrNr);
+    HARDWARE.grey = (HARDWARE.white+HARDWARE.black)/2;
+
+    [HARDWARE.window, HARDWARE.windowRect] = ...
+        Screen('OpenWindow',HARDWARE.ScrNr,...
+        STIM.BackColor*HARDWARE.white,WindowRect,[],2);
 
     if HARDWARE.EyelinkConnected
-        [STIM.Screen.windowEL, STIM.Screen.windowRect] = ...
-            Screen('OpenWindow',STIM.Screen.ScrNr,...
-            STIM.BackColor*STIM.Screen.white,WindowRect,[],2);
+        [HARDWARE.windowEL, HARDWARE.windowRect] = ...
+            Screen('OpenWindow',HARDWARE.ScrNr,...
+            STIM.BackColor*HARDWARE.white,WindowRect,[],2);
     end
 
-    STIM.Screen.Center = ...
-        [STIM.Screen.windowRect(3)/2 STIM.Screen.windowRect(4)/2];
+    HARDWARE.Center = ...
+        [HARDWARE.windowRect(3)/2 HARDWARE.windowRect(4)/2];
 
     % Define blend function for anti-aliassing
     [sourceFactorOld, destinationFactorOld, colorMaskOld] = ...
-        Screen('BlendFunction', STIM.Screen.window, ...
+        Screen('BlendFunction', HARDWARE.window, ...
         GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     % Initialize text options
-    Screen('Textfont',STIM.Screen.window,'Arial');
-    Screen('TextSize',STIM.Screen.window,16);
-    Screen('TextStyle',STIM.Screen.window,0);
+    Screen('Textfont',HARDWARE.window,'Arial');
+    Screen('TextSize',HARDWARE.window,16);
+    Screen('TextStyle',HARDWARE.window,0);
 
     % Maximum useable priorityLevel on this system:
-    priorityLevel = MaxPriority(STIM.Screen.window);
+    priorityLevel = MaxPriority(HARDWARE.window);
     Priority(priorityLevel);
 
     % Get the refreshrate
-    STIM.Screen.FrameDur = Screen('GetFlipInterval',STIM.Screen.window);
+    HARDWARE.FrameDur = Screen('GetFlipInterval',HARDWARE.window);
+    
+    % Get the screen size in pixels
+    [HARDWARE.PixWidth, HARDWARE.PixHeight] = ...
+        Screen('WindowSize',HARDWARE.ScrNr);
+    % Get the screen size in mm
+    [HARDWARE.MmWidth, HARDWARE.MmHeight] = ...
+        Screen('DisplaySize',HARDWARE.ScrNr);
+
+    
+    % Define conversion factors
+    HARDWARE.Mm2Pix=HARDWARE.PixWidth/HARDWARE.MmWidth;
+    HARDWARE.Deg2Pix=(tand(1)*HARDWARE.DistFromScreen)*...
+        HARDWARE.PixWidth/HARDWARE.MmWidth;
+
+    % Gamma Correction to allow intensity in fractions
+    if HARDWARE.DoGammaCorrection
+        [OLD_Gamtable, dacbits, reallutsize] = ...
+            Screen('ReadNormalizedGammaTable', HARDWARE.ScrNr);
+        GamCor = (0:1/255:1).^HARDWARE.GammaCorrection;
+        Gamtable = [GamCor;GamCor;GamCor]';
+        Screen('LoadNormalizedGammaTable',HARDWARE.ScrNr, Gamtable);
+    end
+
+    % Determine color of on screen text and feedback
+    % depends on background color --> Black or white
+    if max(STIM.BackColor) > .5
+        STIM.TextIntensity = HARDWARE.black;
+    else
+        STIM.TextIntensity = HARDWARE.white;
+    end
 
     %% Prepare stimuli --------------------------------------------------
     % generate a trial list ---
@@ -228,24 +226,16 @@ try
     % load the ones we need
     for ui = uniqueimages
         STIM.img(ui).img = imread(fullfile(STIM.bitmapdir,STIM.img(ui).fn));
-        STIM.img(ui).tex = MakeTexture(STIM.Screen.window,STIM.img(ui).img);
+        STIM.img(ui).tex = Screen('MakeTexture',HARDWARE.window,STIM.img(ui).img);
     end
 
-    % calculate the rects for image placement
-    for i = 1: size(STIM.Trials.imgpos,1)
-        ImageRect{i} = CenterRectOnPoint([0 0 ...
-            STIM.Trials.imgsz(1)*STIM.Screen.Deg2Pix ...
-            STIM.Trials.imgsz(2)*STIM.Screen.Deg2Pix], ...
-            STIM.Screen.Center(1)+STIM.Trials.imgpos(i,1)*STIM.Screen.Deg2Pix,...
-            STIM.Screen.Center(2)+STIM.Trials.imgpos(i,2)*STIM.Screen.Deg2Pix);
-    end      
-
     % load the sounds we need
-    [snd(1).wav,snd(1).fs] = audioread(fullfile(STIM.snddir,...
+    [curpath, name, ext] = fileparts(mfilename('fullpath'));
+    [snd(1).wav,snd(1).fs] = audioread(fullfile(curpath,STIM.snddir,...
         STIM.Feedback.SoundCorrect{1}));
-    [snd(2).wav,snd(2).fs] = audioread(fullfile(STIM.snddir,...
+    [snd(2).wav,snd(2).fs] = audioread(fullfile(curpath,STIM.snddir,...
         STIM.Feedback.SoundCorrect{2}));
-    [snd(3).wav,snd(3).fs] = audioread(fullfile(STIM.snddir,...
+    [snd(3).wav,snd(3).fs] = audioread(fullfile(curpath,STIM.snddir,...
         STIM.Feedback.SoundWrong));
 
     % Create filename ---
@@ -253,30 +243,25 @@ try
 
     % Create the fixation dot area
     FixRect = CenterRectOnPoint([0 0 ...
-        STIM.Fix.Size*STIM.Screen.Deg2Pix ...
-        STIM.Fix.Size*STIM.Screen.Deg2Pix ],...
-        STIM.Screen.Center(1),STIM.Screen.Center(2));
+        STIM.Fix.Size*HARDWARE.Deg2Pix ...
+        STIM.Fix.Size*HARDWARE.Deg2Pix ],...
+        HARDWARE.Center(1),HARDWARE.Center(2));
     FixWinRect = CenterRectOnPoint([0 0 ...
-        2*STIM.Fix.WindowRadius*STIM.Screen.Deg2Pix ...
-        2*STIM.Fix.WindowRadius*STIM.Screen.Deg2Pix], ...
-        STIM.Screen.Center(1),STIM.Screen.Center(2));
+        2*STIM.Fix.WindowRadius*HARDWARE.Deg2Pix ...
+        2*STIM.Fix.WindowRadius*HARDWARE.Deg2Pix], ...
+        HARDWARE.Center(1),HARDWARE.Center(2));
 
     % Initiate the side-cues
     for c = 1:length(STIM.cue)
-        switch STIM.cue(c).type
-            case 'line'
-                x1 = round(STIM.Screen.Center(1) + ...
-                    (STIM.cue(c).pos(1)-STIM.cue(c).sz(1)/2)*STIM.Screen.Deg2Pix);
-                x2 = round(STIM.Screen.Center(1) + ...
-                    (STIM.cue(c).pos(1)+STIM.cue(c).sz(1)/2)*STIM.Screen.Deg2Pix);
-                y1 = round(STIM.Screen.Center(2) + ...
-                    (STIM.cue(c).pos(2)-STIM.cue(c).sz(2)/2)*STIM.Screen.Deg2Pix);
-                y2 = round(STIM.Screen.Center(2) + ...
-                    (STIM.cue(c).pos(2)+STIM.cue(c).sz(2)/2)*STIM.Screen.Deg2Pix);
-                STIM.cue(c).rect = [x1,y1,x2,y2];
-           case 'something else'
-                % keep this open for alternative cue types
-        end
+        x1 = round(HARDWARE.Center(1) + ...
+            (STIM.cue(c).pos(1)-STIM.cue(c).sz(1)/2)*HARDWARE.Deg2Pix);
+        x2 = round(HARDWARE.Center(1) + ...
+            (STIM.cue(c).pos(1)+STIM.cue(c).sz(1)/2)*HARDWARE.Deg2Pix);
+        y1 = round(HARDWARE.Center(2) + ...
+            (STIM.cue(c).pos(2)-STIM.cue(c).sz(2)/2)*HARDWARE.Deg2Pix);
+        y2 = round(HARDWARE.Center(2) + ...
+            (STIM.cue(c).pos(2)+STIM.cue(c).sz(2)/2)*HARDWARE.Deg2Pix);
+        STIM.cue(c).rect = [x1,y1,x2,y2];
     end
 
     %% Run the Experiment
@@ -287,9 +272,9 @@ try
         EL.edfFile = 'TempEL'; %NB! Name cannot be more than 8 digits long
         cd(fullfile(StartFolder, DataFolder))
         Eyelink('Openfile',EL.edfFile);
-        EL.el = EyelinkInitDefaults(STIM.Screen.windowEL);
-        EL.el.backgroundcolour = STIM.BackColor*STIM.Screen.white;
-        EL.el.foregroundcolour = STIM.Screen.black;
+        EL.el = EyelinkInitDefaults(HARDWARE.windowEL);
+        EL.el.backgroundcolour = STIM.BackColor*HARDWARE.white;
+        EL.el.foregroundcolour = HARDWARE.black;
 
         % Calibrate the eye tracker
         EyelinkDoTrackerSetup(EL.el); % control further from eyelink pc
@@ -305,7 +290,7 @@ try
         Eyelink('Message', 'SYNCTIME');
         EL.eye_used = -1;
         Eyelink('Message', LOG.FileName);
-        Screen('Close', STIM.Screen.windowEL);
+        Screen('Close', HARDWARE.windowEL);
         cd(StartFolder);
     end
 
@@ -327,7 +312,7 @@ try
         end
 
         if ~QuitScript
-            vbl = Screen('Flip', STIM.Screen.window);
+            vbl = Screen('Flip', HARDWARE.window);
             %%% HERE: REMEASURE FIX-POINT ======
             if HARDWARE.EyelinkConnected
                 GoodCenter = false;
@@ -363,17 +348,17 @@ try
                             KeyIsDown = false;
                         end
                         % Draw fixdot
-                        Screen('FillRect',STIM.Screen.window,...
-                            STIM.BackColor*STIM.Screen.white);
-                        Screen('FillOval', STIM.Screen.window,...
-                            STIM.Fix.Color.*STIM.Screen.white,FixRect);
+                        Screen('FillRect',HARDWARE.window,...
+                            STIM.BackColor*HARDWARE.white);
+                        Screen('FillOval', HARDWARE.window,...
+                            STIM.Fix.Color.*HARDWARE.white,FixRect);
                         % Draw Fix instruction
-                        DrawFormattedText(STIM.Screen.window,...
-                            InstrText,'center',STIM.Screen.Center(2)-...
-                            10*STIM.Fix.Size*STIM.Screen.Deg2Pix,...
+                        DrawFormattedText(HARDWARE.window,...
+                            InstrText,'center',HARDWARE.Center(2)-...
+                            10*STIM.Fix.Size*HARDWARE.Deg2Pix,...
                             STIM.TextIntensity);
                         % Flip
-                        vbl = Screen('Flip', STIM.Screen.window);
+                        vbl = Screen('Flip', HARDWARE.window);
                     end
                 end
                 %%% ============================
@@ -386,14 +371,14 @@ try
             % First trial
             if TR == 1 
                 % start of the experiment
-                Screen('FillRect',STIM.Screen.window,...
-                    STIM.BackColor*STIM.Screen.white);
-                DrawFormattedText(STIM.Screen.window,...
+                Screen('FillRect',HARDWARE.window,...
+                    STIM.BackColor*HARDWARE.white);
+                DrawFormattedText(HARDWARE.window,...
                     '>> Press key to start <<','center',....
-                    STIM.Screen.Center(2)-40,...
+                    HARDWARE.Center(2)-40,...
                     STIM.TextIntensity);
                 fprintf('\n>>Press key to start<<\n');
-                vbl = Screen('Flip', STIM.Screen.window);
+                vbl = Screen('Flip', HARDWARE.window);
                 LOG.ExpOnset = vbl; 
 
                 % wait for keypress
@@ -406,11 +391,11 @@ try
             end
 
             % Draw the fixation dot
-            Screen('FillRect',STIM.Screen.window,...
-                    STIM.BackColor*STIM.Screen.white);
-            Screen('FillOval', STIM.Screen.window,...
-                STIM.Fix.Color.*STIM.Screen.white,FixRect);
-            vbl = Screen('Flip', STIM.Screen.window);
+            Screen('FillRect',HARDWARE.window,...
+                    STIM.BackColor*HARDWARE.white);
+            Screen('FillOval', HARDWARE.window,...
+                STIM.Fix.Color.*HARDWARE.white,FixRect);
+            vbl = Screen('Flip', HARDWARE.window);
             LOG.Trial(TR).FixOnset = vbl - LOG.ExpOnset;
 
             if STIM.RequireFixToStart
@@ -447,10 +432,10 @@ try
                     STIM.Times.Fix/1000 && FixatingNow && ~QuitScript
 
                 % Draw fix dot
-                Screen('FillRect',STIM.Screen.window,...
-                    STIM.BackColor*STIM.Screen.white);
-                Screen('FillOval', STIM.Screen.window,...
-                    STIM.Fix.Color.*STIM.Screen.white,FixRect);
+                Screen('FillRect',HARDWARE.window,...
+                    STIM.BackColor*HARDWARE.white);
+                Screen('FillOval', HARDWARE.window,...
+                    STIM.Fix.Color.*HARDWARE.white,FixRect);
 
                 % Check fixation
                 if STIM.RequireContFix
@@ -474,7 +459,7 @@ try
                 end
 
                 % Flip the screen buffer and get timestamp
-                vbl = Screen('Flip', STIM.Screen.window);
+                vbl = Screen('Flip', HARDWARE.window);
             end
 
 
@@ -486,47 +471,75 @@ try
             FirstFlipDone = false;
             CueOn = false; CueOnLog = false;
             ImageOn = false; ImageOnLog = false;
+            RedrawBG = true;
 
             while vbl - LOG.ExpOnset < ...
                     (LOG.Trial(TR).StimPhaseOnset + MaxDur/1000) && ...
-                    ~ResponseGiven  && FixatingNow && ~QuitScript
-                % background --
-                Screen('FillRect',STIM.Screen.window,...
-                    STIM.BackColor*STIM.Screen.white);
+                    ~ResponseGiven && FixatingNow && ~QuitScript
+                
+                if RedrawBG
+                    % background --
+                    Screen('FillRect',HARDWARE.window,...
+                        STIM.BackColor*HARDWARE.white);
+                    CueOn = false;
+                    ImageOn = false;
+                    RedrawBG = false;
+                end
 
                 % CUE --
-                if vbl - LOG.ExpOnset > LOG.Trial(TR).StimPhaseOnset + ...
-                        STIM.Times.Cue/1000 && ~QuitScript
-                    % Draw cue
-                    tidx = LOG.TrialList(TR,1);
-                    cidx = STIM.Trials.trial(tidx).cue;
-                    switch STIM.cue(c).type
-                        case 'line'
-                            Screen('FillRect', STIM.Screen.window,...
-                                STIM.cue(cidx).Color.*STIM.Screen.white,...
-                                STIM.cue(cidx).rect);
-                        case 'something else'
-                            % keep this open for alternative cue types
+                if vbl - LOG.ExpOnset >= LOG.Trial(TR).StimPhaseOnset + ...
+                        STIM.Times.Cue(1)/1000 && ~QuitScript
+                    if ~CueOn
+                        % Draw cue
+                        tidx = LOG.TrialList(TR,1);
+                        cidx = STIM.Trials.trial(tidx).cue;
+                        cwidth = STIM.cue(cidx).sz(1).*HARDWARE.Deg2Pix;
+
+                        veclength = STIM.cue(cidx).sz(2)*HARDWARE.Deg2Pix;
+                        toH = round(STIM.cue(cidx).dir(1)*veclength);
+                        toV = round(STIM.cue(cidx).dir(2)*veclength);
+
+                        Screen('DrawLine',HARDWARE.window,...
+                            STIM.cue(cidx).color.*HARDWARE.white,...
+                            HARDWARE.Center(1), HARDWARE.Center(2),...
+                            HARDWARE.Center(1)+toH, HARDWARE.Center(2)+toV,...
+                            cwidth);
+
+                        CueOn = true;
                     end
-                    CueOn = true;
+                end
+                if vbl - LOG.ExpOnset >= LOG.Trial(TR).StimPhaseOnset + ...
+                        STIM.Times.Cue(2)/1000 && ~QuitScript
+                    RedrawBG = true;
                 end
 
                 % IMAGES --
-                if vbl - LOG.ExpOnset > LOG.Trial(TR).StimPhaseOnset + ...
-                        STIM.Times.Stim/1000 && ~QuitScript
+                if vbl - LOG.ExpOnset >= LOG.Trial(TR).StimPhaseOnset + ...
+                        STIM.Times.Stim(1)/1000 && ~QuitScript
                     % Draw stim images
-                    tidx = LOG.TrialList(TR,1);
-                    for imagei = STIM.Trials.trial(tidx).images
-                        Screen('DrawTexture', STIM.Screen.window,...
-                            STIM.img(imagei).tex,[],ImageRect{imagei})
+                    if ~ImageOn
+                        tidx = LOG.TrialList(TR,1);
+                        for imgidx = 1: length(STIM.Trials.trial(tidx).images)
+                            imagei = STIM.Trials.trial(tidx).images(imgidx);
+                            ImageRect = CenterRectOnPoint(...
+                                [0 0 STIM.imgsz(1) STIM.imgsz(2)].*HARDWARE.Deg2Pix,...
+                                STIM.Trials.trial(tidx).imgpos(imgidx,1)*HARDWARE.Deg2Pix,...
+                                STIM.Trials.trial(tidx).imgpos(imgidx,2)*HARDWARE.Deg2Pix)
+                            Screen('DrawTexture', HARDWARE.window,...
+                                STIM.img(imagei).tex,[],ImageRect)
+                        end
+                        ImageOn = true;
                     end
-                    ImageOn = true;
+                end
+                if vbl - LOG.ExpOnset >= LOG.Trial(TR).StimPhaseOnset + ...
+                        STIM.Times.Stim(2)/1000 && ~QuitScript
+                    RedrawBG = true;
                 end
 
                 % FIX --
                 % Draw fix dot
-                Screen('FillOval', STIM.Screen.window,...
-                    STIM.Fix.Color.*STIM.Screen.white,FixRect);
+                Screen('FillOval', HARDWARE.window,...
+                    STIM.Fix.Color.*HARDWARE.white,FixRect);
 
                 % GET RESPONSE --
                 % Check for key-presses
@@ -604,7 +617,7 @@ try
                 end
 
                 % FLIP SCREEN --
-                vbl = Screen('Flip', STIM.Screen.window);
+                vbl = Screen('Flip', HARDWARE.window);
             end
 
 
@@ -627,27 +640,27 @@ try
 
             % display feedback text --
             % set text to be bigger
-            oldTextSize=Screen('TextSize', STIM.Screen.window,...
+            oldTextSize=Screen('TextSize', HARDWARE.window,...
                 STIM.Feedback.TextSize(1));
-            oldTextStyle=Screen('TextStyle',STIM.Screen.window,1); %bold
+            oldTextStyle=Screen('TextStyle',HARDWARE.window,1); %bold
             % background
-            Screen('FillRect',STIM.Screen.window,...
-                    STIM.BackColor*STIM.Screen.white);
+            Screen('FillRect',HARDWARE.window,...
+                    STIM.BackColor*HARDWARE.white);
             if CorrectResponse
-                DrawFormattedText(STIM.Screen.window,...
+                DrawFormattedText(HARDWARE.window,...
                     [STIM.Feedback.TextCorrect '\n' num2str(nPoints) 'points'],...
-                    'center',STIM.Screen.Center(2)-STIM.Feedback.TextY(1),...
-                    STIM.Feedback.TextCorrectCol.*STIM.Screen.white);
+                    'center',HARDWARE.Center(2)-STIM.Feedback.TextY(1),...
+                    STIM.Feedback.TextCorrectCol.*HARDWARE.white);
             else
-                DrawFormattedText(STIM.Screen.window,...
+                DrawFormattedText(HARDWARE.window,...
                     STIM.Feedback.TextWrong,...
-                    'center',STIM.Screen.Center(2)-STIM.Feedback.TextY(1),...
-                    STIM.Feedback.TextWrongCol.*STIM.Screen.white);
+                    'center',HARDWARE.Center(2)-STIM.Feedback.TextY(1),...
+                    STIM.Feedback.TextWrongCol.*HARDWARE.white);
             end
             % Set text size back to small
-            Screen('TextSize', STIM.Screen.window,oldTextSize);
-            Screen('TextStyle',STIM.Screen.window,0);
-            vbl = Screen('Flip', STIM.Screen.window);
+            Screen('TextSize', HARDWARE.window,oldTextSize);
+            Screen('TextStyle',HARDWARE.window,0);
+            vbl = Screen('Flip', HARDWARE.window);
             
             % play sound --
             if CorrectResponse
@@ -683,22 +696,22 @@ try
                     end
                     % give as feedback
                     % set text to be bigger
-                    oldTextSize=Screen('TextSize', STIM.Screen.window,...
+                    oldTextSize=Screen('TextSize', HARDWARE.window,...
                         STIM.Feedback.TextSize(1));
-                    oldTextStyle=Screen('TextStyle',STIM.Screen.window,1); %bold
+                    oldTextStyle=Screen('TextStyle',HARDWARE.window,1); %bold
                     % background
-                    Screen('FillRect',STIM.Screen.window,...
-                        STIM.BackColor*STIM.Screen.white);
+                    Screen('FillRect',HARDWARE.window,...
+                        STIM.BackColor*HARDWARE.white);
 
-                    DrawFormattedText(STIM.Screen.window,...
+                    DrawFormattedText(HARDWARE.window,...
                         [num2str(floor(perfperc)) '% correct\nPsychophysics ' perfclass],...
-                        'center',STIM.Screen.Center(2)-STIM.Feedback.TextY(1),...
-                        STIM.Feedback.TextCorrectCol.*STIM.Screen.white);
+                        'center',HARDWARE.Center(2)-STIM.Feedback.TextY(1),...
+                        STIM.Feedback.TextCorrectCol.*HARDWARE.white);
 
                     % Set text size back to small
-                    Screen('TextSize', STIM.Screen.window,oldTextSize);
-                    Screen('TextStyle',STIM.Screen.window,0);
-                    vbl = Screen('Flip', STIM.Screen.window);
+                    Screen('TextSize', HARDWARE.window,oldTextSize);
+                    Screen('TextStyle',HARDWARE.window,0);
+                    vbl = Screen('Flip', HARDWARE.window);
                     StartPerfFB = GetSecs;
 
                     % check timing --
@@ -713,8 +726,8 @@ try
             StartITI=GetSecs;
 
             % empty screen
-            Screen('FillRect',STIM.Screen.window,...
-                    STIM.BackColor*STIM.Screen.white);
+            Screen('FillRect',HARDWARE.window,...
+                    STIM.BackColor*HARDWARE.white);
 
             % check timing
             while GetSecs < StartITI + STIM.Times.ITI/1000
@@ -725,24 +738,24 @@ try
     
     %% WRAP UP
     if ~QuitScript
-        vbl = Screen('Flip', STIM.Screen.window);
-        Screen('FillRect',STIM.Screen.window,...
-                    STIM.BackColor*STIM.Screen.white);
-        DrawFormattedText(STIM.Screen.window,'Thank you!',...
+        vbl = Screen('Flip', HARDWARE.window);
+        Screen('FillRect',HARDWARE.window,...
+                    STIM.BackColor*HARDWARE.white);
+        DrawFormattedText(HARDWARE.window,'Thank you!',...
             'center','center',[1 0 0]*STIM.TextIntensity);
-        vbl = Screen('Flip', STIM.Screen.window);
+        vbl = Screen('Flip', HARDWARE.window);
         % send message to eyelink
         if HARDWARE.EyelinkConnected
             Eyelink('Message', 'EndExperiment');
         end
         pause(2)
     else
-        vbl = Screen('Flip', STIM.Screen.window);
-        Screen('FillRect',STIM.Screen.window,...
-                    STIM.BackColor*STIM.Screen.white);
-        DrawFormattedText(STIM.Screen.window,...
+        vbl = Screen('Flip', HARDWARE.window);
+        Screen('FillRect',HARDWARE.window,...
+                    STIM.BackColor*HARDWARE.white);
+        DrawFormattedText(HARDWARE.window,...
             'Exiting...','center','center',STIM.TextIntensity);
-        vbl = Screen('Flip', STIM.Screen.window);
+        vbl = Screen('Flip', HARDWARE.window);
     end
     pause(.5)
 
@@ -750,7 +763,7 @@ try
     save(fullfile(StartFolder,DataFolder,LOG.FileName),'HARDWARE','STIM','LOG');
 
     %% Restore screen
-    Screen('LoadNormalizedGammaTable',STIM.Screen.ScrNr,OLD_Gamtable);
+    Screen('LoadNormalizedGammaTable',HARDWARE.ScrNr,OLD_Gamtable);
     Screen('CloseAll');ListenChar();ShowCursor;
 
     if ~QuitScript
@@ -770,8 +783,11 @@ try
         Eyelink('ShutDown');
         cd(fullfile(StartFolder,DataFolder));
     end
-catch %#ok<CTCH> %if there is an error the script will go here
-    Screen('LoadNormalizedGammaTable',STIM.Screen.ScrNr,OLD_Gamtable);
+catch e %#ok<CTCH> %if there is an error the script will go here
+    fprintf(1,'There was an error! The message was:\n%s',e.message);    
+    if HARDWARE.DoGammaCorrection
+        Screen('LoadNormalizedGammaTable',HARDWARE.ScrNr,OLD_Gamtable);
+    end
     Screen('CloseAll');ListenChar();ShowCursor;psychrethrow(psychlasterror);
     %% Close up Eyelink
     if HARDWARE.EyelinkConnected
