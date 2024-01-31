@@ -31,6 +31,7 @@ DataFolder = 'CL_data';
 StartFolder = pwd;
 [~,~] = mkdir(fullfile(StartFolder,DataFolder));
 
+%% Run the experiment ---------------------------------------------------
 try
     %% Initialize & Calculate Stimuli -----------------------------------
     if Debug
@@ -54,7 +55,7 @@ try
             LOG.Handedness = INFO{4};
         end
         % Get timestring id
-        LOG.DateTimeStr = datestr(datetime('now'), 'yyyyMMdd_HHmm');
+        LOG.DateTimeStr = datestr(datetime('now'), 'yyyymmdd_HHMM');
     end
 
     if HARDWARE.EyelinkConnected %#ok<*USENS>
@@ -89,7 +90,7 @@ try
         KeyBreak = KbName('ESCAPE');
     end
     ListenChar(2);
-    
+
     % Open a double-buffered window on screen
     if Debug
         % for CK desktop linux; take one screen only
@@ -135,7 +136,7 @@ try
 
     % Get the refreshrate
     HARDWARE.FrameDur = Screen('GetFlipInterval',HARDWARE.window);
-    
+
     % Get the screen size in pixels
     [HARDWARE.PixWidth, HARDWARE.PixHeight] = ...
         Screen('WindowSize',HARDWARE.ScrNr);
@@ -143,7 +144,7 @@ try
     [HARDWARE.MmWidth, HARDWARE.MmHeight] = ...
         Screen('DisplaySize',HARDWARE.ScrNr);
 
-    
+
     % Define conversion factors
     HARDWARE.Mm2Pix=HARDWARE.PixWidth/HARDWARE.MmWidth;
     HARDWARE.Deg2Pix=(tand(1)*HARDWARE.DistFromScreen)*...
@@ -211,7 +212,7 @@ try
     % experiment
 
     uniquetrials = unique(LOG.TrialList(:,1));
-    allimages = []; 
+    allimages = [];
     for ut = uniquetrials'
         allimages = [allimages, STIM.Trials.trial(ut).images]; %#ok<*AGROW>
     end
@@ -239,7 +240,7 @@ try
         STIM.Feedback.SoundWrong));
 
     % Create filename ---
-    LOG.FileName = [LOG.Subject '_' DataFolder '_' LOG.DateTimeStr];
+    LOG.FileName = [LOG.Subject '_' LOG.DateTimeStr];
 
     % Create the fixation dot area
     FixRect = CenterRectOnPoint([0 0 ...
@@ -302,7 +303,7 @@ try
         else
             KeyWasDown = false;
         end
-        
+
         % Trial-start to Eyelink
         if HARDWARE.EyelinkConnected
             pause(0.1) % send some samples to edf file
@@ -362,24 +363,24 @@ try
                     end
                 end
                 %%% ============================
-            else 
+            else
                 CenterFix = [0,0];
             end
             LOG.Trial(TR).CenterFix = CenterFix;
 
             %% Fix-phase
             % First trial
-            if TR == 1 
+            if TR == 1
                 % start of the experiment
                 Screen('FillRect',HARDWARE.window,...
                     STIM.BackColor*HARDWARE.white);
                 DrawFormattedText(HARDWARE.window,...
-                    '>> Press key to start <<','center',....
-                    HARDWARE.Center(2)-40,...
-                    STIM.TextIntensity);
+                    ['Choose the 1 or 0 key for the cued image\n\n'...
+                    '>> Press any key to start <<'],'center',....
+                    'center',STIM.TextIntensity);
                 fprintf('\n>>Press key to start<<\n');
                 vbl = Screen('Flip', HARDWARE.window);
-                LOG.ExpOnset = vbl; 
+                LOG.ExpOnset = vbl;
 
                 % wait for keypress
                 KbWait;while KbCheck;end
@@ -389,10 +390,9 @@ try
                     Eyelink('Message', 'StartFix');
                 end
             end
-
             % Draw the fixation dot
             Screen('FillRect',HARDWARE.window,...
-                    STIM.BackColor*HARDWARE.white);
+                STIM.BackColor*HARDWARE.white);
             Screen('FillOval', HARDWARE.window,...
                 STIM.Fix.Color.*HARDWARE.white,FixRect);
             vbl = Screen('Flip', HARDWARE.window);
@@ -464,77 +464,57 @@ try
 
 
             %% Cue/Image-phase
-            LOG.Trial(TR).StimPhaseOnset = vbl - LOG.ExpOnset; 
+            LOG.Trial(TR).StimPhaseOnset = vbl - LOG.ExpOnset;
             MaxDur = max([STIM.Times.Cue(2) STIM.Times.Stim(2)]);
             ResponseGiven = false;
 
             FirstFlipDone = false;
-            CueOn = false; CueOnLog = false;
-            ImageOn = false; ImageOnLog = false;
-            RedrawBG = true;
-
+            CueOnLog = false;
+            ImageOnLog = false;
+            nl=0;
             while vbl - LOG.ExpOnset < ...
                     (LOG.Trial(TR).StimPhaseOnset + MaxDur/1000) && ...
                     ~ResponseGiven && FixatingNow && ~QuitScript
-                
-                if RedrawBG
-                    % background --
-                    Screen('FillRect',HARDWARE.window,...
-                        STIM.BackColor*HARDWARE.white);
-                    CueOn = false;
-                    ImageOn = false;
-                    RedrawBG = false;
-                end
+                % background --
+                Screen('FillRect',HARDWARE.window,...
+                    STIM.BackColor*HARDWARE.white);
 
                 % CUE --
                 if vbl - LOG.ExpOnset >= LOG.Trial(TR).StimPhaseOnset + ...
                         STIM.Times.Cue(1)/1000 && ~QuitScript
-                    if ~CueOn
-                        % Draw cue
-                        tidx = LOG.TrialList(TR,1);
-                        cidx = STIM.Trials.trial(tidx).cue;
-                        cwidth = STIM.cue(cidx).sz(1).*HARDWARE.Deg2Pix;
+                    % Draw cue
+                    tidx = LOG.TrialList(TR,1);
+                    cidx = STIM.Trials.trial(tidx).cue;
+                    cwidth = STIM.cue(cidx).sz(1).*HARDWARE.Deg2Pix;
 
-                        veclength = STIM.cue(cidx).sz(2)*HARDWARE.Deg2Pix;
-                        toH = round(STIM.cue(cidx).dir(1)*veclength);
-                        toV = round(STIM.cue(cidx).dir(2)*veclength);
+                    veclength = STIM.cue(cidx).sz(2)*HARDWARE.Deg2Pix;
+                    toH = round(STIM.cue(cidx).dir(1)*veclength);
+                    toV = round(STIM.cue(cidx).dir(2)*veclength);
 
-                        Screen('DrawLine',HARDWARE.window,...
-                            STIM.cue(cidx).color.*HARDWARE.white,...
-                            HARDWARE.Center(1), HARDWARE.Center(2),...
-                            HARDWARE.Center(1)+toH, HARDWARE.Center(2)+toV,...
-                            cwidth);
-
-                        CueOn = true;
-                    end
+                    Screen('DrawLine',HARDWARE.window,...
+                        STIM.cue(cidx).color.*HARDWARE.white,...
+                        HARDWARE.Center(1), HARDWARE.Center(2),...
+                        HARDWARE.Center(1)+toH, HARDWARE.Center(2)+toV,...
+                        cwidth);
                 end
-                if vbl - LOG.ExpOnset >= LOG.Trial(TR).StimPhaseOnset + ...
-                        STIM.Times.Cue(2)/1000 && ~QuitScript
-                    RedrawBG = true;
-                end
+
 
                 % IMAGES --
                 if vbl - LOG.ExpOnset >= LOG.Trial(TR).StimPhaseOnset + ...
                         STIM.Times.Stim(1)/1000 && ~QuitScript
                     % Draw stim images
-                    if ~ImageOn
-                        tidx = LOG.TrialList(TR,1);
-                        for imgidx = 1: length(STIM.Trials.trial(tidx).images)
-                            imagei = STIM.Trials.trial(tidx).images(imgidx);
-                            ImageRect = CenterRectOnPoint(...
-                                [0 0 STIM.imgsz(1) STIM.imgsz(2)].*HARDWARE.Deg2Pix,...
-                                STIM.Trials.trial(tidx).imgpos(imgidx,1)*HARDWARE.Deg2Pix,...
-                                STIM.Trials.trial(tidx).imgpos(imgidx,2)*HARDWARE.Deg2Pix)
-                            Screen('DrawTexture', HARDWARE.window,...
-                                STIM.img(imagei).tex,[],ImageRect)
-                        end
-                        ImageOn = true;
+                    tidx = LOG.TrialList(TR,1);
+                    for imgidx = 1: length(STIM.Trials.trial(tidx).images)
+                        imagei = STIM.Trials.trial(tidx).images(imgidx);
+                        ImageRect = CenterRectOnPoint(...
+                            [0 0 STIM.imgsz(1) STIM.imgsz(2)].*HARDWARE.Deg2Pix,...
+                            HARDWARE.Center(1)+STIM.Trials.trial(tidx).imgpos(imgidx,1)*HARDWARE.Deg2Pix,...
+                            HARDWARE.Center(2)+STIM.Trials.trial(tidx).imgpos(imgidx,2)*HARDWARE.Deg2Pix);
+                        Screen('DrawTexture', HARDWARE.window,...
+                            STIM.img(imagei).tex,[],ImageRect)
                     end
                 end
-                if vbl - LOG.ExpOnset >= LOG.Trial(TR).StimPhaseOnset + ...
-                        STIM.Times.Stim(2)/1000 && ~QuitScript
-                    RedrawBG = true;
-                end
+
 
                 % FIX --
                 % Draw fix dot
@@ -546,19 +526,26 @@ try
                 [keyIsDown,secs,keyCode]=KbCheck; %#ok<*ASGLU>
                 if keyIsDown && ~KeyWasDown
                     if keyCode(KeyBreak) %break when esc
+                        %fprintf('Escape pressed\n')
                         QuitScript=1;break;
                     elseif keyCode(Key1)
+                        %fprintf('Key 1 pressed\n')
                         LOG.Trial(TR).Response = 'left';
                         LOG.Trial(TR).Resp = 1;
+                        ResponseGiven = true;
                     elseif keyCode(Key2)
+                        %fprintf('Key 0 pressed\n')
                         LOG.Trial(TR).Response = 'right';
                         LOG.Trial(TR).Resp = 2;
+                        ResponseGiven = true;
                     end
                     KeyWasDown=1;
                 elseif keyIsDown && KeyWasDown
                     if keyCode(KeyBreak) %break when esc
                         QuitScript=1;break;
                     end
+                elseif ~keyIsDown
+                    KeyWasDown=0;
                 end
 
                 % CHECK FIXATION --
@@ -622,112 +609,113 @@ try
 
 
             %% Feedback
-            StartFeedback=GetSecs;
-            LOG.Trial(TR).FeedbackOnset = vbl - LOG.ExpOnset; 
+            if ~QuitScript
+                StartFeedback=GetSecs;
+                LOG.Trial(TR).FeedbackOnset = vbl - LOG.ExpOnset;
 
-            % check if response is correct or not
-            imagei = STIM.Trials.trial(tidx).targ;
-            if LOG.Trial(TR).Resp == STIM.img(imagei).correctresp
-                % correct
-                CorrectResponse = true;
-                nPoints = STIM.img(imagei).points;
-            else
-                % wrong
-                CorrectResponse = false;
-            end
-            LOG.Trial(TR).RespCorr = CorrectResponse;
-            CorrResp = [CorrResp; CorrectResponse];
-
-            % display feedback text --
-            % set text to be bigger
-            oldTextSize=Screen('TextSize', HARDWARE.window,...
-                STIM.Feedback.TextSize(1));
-            oldTextStyle=Screen('TextStyle',HARDWARE.window,1); %bold
-            % background
-            Screen('FillRect',HARDWARE.window,...
-                    STIM.BackColor*HARDWARE.white);
-            if CorrectResponse
-                DrawFormattedText(HARDWARE.window,...
-                    [STIM.Feedback.TextCorrect '\n' num2str(nPoints) 'points'],...
-                    'center',HARDWARE.Center(2)-STIM.Feedback.TextY(1),...
-                    STIM.Feedback.TextCorrectCol.*HARDWARE.white);
-            else
-                DrawFormattedText(HARDWARE.window,...
-                    STIM.Feedback.TextWrong,...
-                    'center',HARDWARE.Center(2)-STIM.Feedback.TextY(1),...
-                    STIM.Feedback.TextWrongCol.*HARDWARE.white);
-            end
-            % Set text size back to small
-            Screen('TextSize', HARDWARE.window,oldTextSize);
-            Screen('TextStyle',HARDWARE.window,0);
-            vbl = Screen('Flip', HARDWARE.window);
-            
-            % play sound --
-            if CorrectResponse
-                if nPoints == 0
-                    sound(snd(1).wav,snd(1).fs);
+                % check if response is correct or not
+                imagei = STIM.Trials.trial(tidx).targ;
+                if LOG.Trial(TR).Resp == STIM.img(imagei).correctresp
+                    % correct
+                    CorrectResponse = true;
+                    nPoints = STIM.img(imagei).points;
                 else
-                    sound(snd(2).wav,snd(2).fs);
+                    % wrong
+                    CorrectResponse = false;
                 end
-            else
-                sound(snd(3).wav,snd(3).fs);
-            end
+                LOG.Trial(TR).RespCorr = CorrectResponse;
+                CorrResp = [CorrResp; CorrectResponse];
 
-            % check timing --
-            while GetSecs < StartFeedback + STIM.Times.Feedback/1000 && ...
-                    ~QuitScript
-                % wait
-            end
-
-
-            %% PERFORMANCE FEEDBACK
-            if STIM.Feedback.PerfShow
-                if TR > STIM.Feedback.PerfOverLastNTrials && ...
-                        mod(TR,STIM.Feedback.PerfShowEveryNTrials) == 0
-                    % calculate performance level
-                    perfperc = 100*(...
-                        sum(CorrResp(end-(STIM.Feedback.PerfOverLastNTrials-1):end))./...
-                        STIM.Feedback.PerfOverLastNTrials);
-                    % which category
-                    i = 1;
-                    while perfperc <= STIM.Feedback.PerfLevels{i,1}
-                        perfclass = STIM.Feedback.PerfLevels{i,2};
-                        i=i+1;
-                    end
-                    % give as feedback
-                    % set text to be bigger
-                    oldTextSize=Screen('TextSize', HARDWARE.window,...
-                        STIM.Feedback.TextSize(1));
-                    oldTextStyle=Screen('TextStyle',HARDWARE.window,1); %bold
-                    % background
-                    Screen('FillRect',HARDWARE.window,...
-                        STIM.BackColor*HARDWARE.white);
-
+                % display feedback text --
+                % set text to be bigger
+                oldTextSize=Screen('TextSize', HARDWARE.window,...
+                    STIM.Feedback.TextSize(1));
+                oldTextStyle=Screen('TextStyle',HARDWARE.window,1); %bold
+                % background
+                Screen('FillRect',HARDWARE.window,...
+                    STIM.BackColor*HARDWARE.white);
+                if CorrectResponse
                     DrawFormattedText(HARDWARE.window,...
-                        [num2str(floor(perfperc)) '% correct\nPsychophysics ' perfclass],...
-                        'center',HARDWARE.Center(2)-STIM.Feedback.TextY(1),...
+                        ['Response: ' LOG.Trial(TR).Response '\n\n'...
+                        STIM.Feedback.TextCorrect '\n\n' num2str(nPoints) ' points'],...
+                        'center','center',...
                         STIM.Feedback.TextCorrectCol.*HARDWARE.white);
+                else
+                    DrawFormattedText(HARDWARE.window,...
+                        ['Response: ' LOG.Trial(TR).Response '\n\n'...
+                        STIM.Feedback.TextWrong],...
+                        'center','center',...
+                        STIM.Feedback.TextWrongCol.*HARDWARE.white);
+                end
+                % Set text size back to small
+                Screen('TextSize', HARDWARE.window,oldTextSize);
+                Screen('TextStyle',HARDWARE.window,0);
+                vbl = Screen('Flip', HARDWARE.window);
 
-                    % Set text size back to small
-                    Screen('TextSize', HARDWARE.window,oldTextSize);
-                    Screen('TextStyle',HARDWARE.window,0);
-                    vbl = Screen('Flip', HARDWARE.window);
-                    StartPerfFB = GetSecs;
+                % play sound --
+                if CorrectResponse
+                    if nPoints == 0
+                        sound(snd(1).wav,snd(1).fs);
+                    else
+                        sound(snd(2).wav,snd(2).fs);
+                    end
+                else
+                    sound(snd(3).wav,snd(3).fs);
+                end
 
-                    % check timing --
-                    while GetSecs < StartPerfFB + STIM.Times.Feedback/1000 && ...
-                            ~QuitScript
-                        % wait
+                % check timing --
+                while GetSecs < StartFeedback + STIM.Times.Feedback/1000 && ...
+                        ~QuitScript
+                    % wait
+                end
+
+
+                %% PERFORMANCE FEEDBACK
+                if STIM.Feedback.PerfShow
+                    if TR >= STIM.Feedback.PerfOverLastNTrials && ...
+                            mod(TR,STIM.Feedback.PerfShowEveryNTrials) == 0
+                        % calculate performance level
+                        perfperc = 100*(...
+                            sum(CorrResp(end-(STIM.Feedback.PerfOverLastNTrials-1):end))./...
+                            STIM.Feedback.PerfOverLastNTrials);
+                        % which category
+                        idx = find([STIM.Feedback.PerfLevels{:,1}]>=perfperc,1,'first');
+                        perfclass = STIM.Feedback.PerfLevels{idx,2};
+
+                        % give as feedback
+                        % set text to be bigger
+                        oldTextSize=Screen('TextSize', HARDWARE.window,...
+                            STIM.Feedback.TextSize(1));
+                        oldTextStyle=Screen('TextStyle',HARDWARE.window,1); %bold
+                        % background
+                        Screen('FillRect',HARDWARE.window,...
+                            STIM.BackColor*HARDWARE.white);
+
+                        DrawFormattedText(HARDWARE.window,...
+                            [num2str(floor(perfperc)) '% correct\n\nPsychophysics ' perfclass],...
+                            'center','center',...
+                            STIM.Feedback.NeutralCol.*HARDWARE.white);
+
+                        % Set text size back to small
+                        Screen('TextSize', HARDWARE.window,oldTextSize);
+                        Screen('TextStyle',HARDWARE.window,0);
+                        vbl = Screen('Flip', HARDWARE.window);
+                        StartPerfFB = GetSecs;
+
+                        % check timing --
+                        while GetSecs < StartPerfFB + STIM.Times.Feedback/1000 && ...
+                                ~QuitScript
+                            % wait
+                        end
                     end
                 end
             end
-
             %% ITI
             StartITI=GetSecs;
 
             % empty screen
             Screen('FillRect',HARDWARE.window,...
-                    STIM.BackColor*HARDWARE.white);
+                STIM.BackColor*HARDWARE.white);
 
             % check timing
             while GetSecs < StartITI + STIM.Times.ITI/1000
@@ -735,14 +723,14 @@ try
             end
         end
     end
-    
+
     %% WRAP UP
     if ~QuitScript
         vbl = Screen('Flip', HARDWARE.window);
         Screen('FillRect',HARDWARE.window,...
-                    STIM.BackColor*HARDWARE.white);
+            STIM.BackColor*HARDWARE.white);
         DrawFormattedText(HARDWARE.window,'Thank you!',...
-            'center','center',[1 0 0]*STIM.TextIntensity);
+            'center','center',STIM.TextIntensity);
         vbl = Screen('Flip', HARDWARE.window);
         % send message to eyelink
         if HARDWARE.EyelinkConnected
@@ -752,7 +740,7 @@ try
     else
         vbl = Screen('Flip', HARDWARE.window);
         Screen('FillRect',HARDWARE.window,...
-                    STIM.BackColor*HARDWARE.white);
+            STIM.BackColor*HARDWARE.white);
         DrawFormattedText(HARDWARE.window,...
             'Exiting...','center','center',STIM.TextIntensity);
         vbl = Screen('Flip', HARDWARE.window);
@@ -763,7 +751,9 @@ try
     save(fullfile(StartFolder,DataFolder,LOG.FileName),'HARDWARE','STIM','LOG');
 
     %% Restore screen
-    Screen('LoadNormalizedGammaTable',HARDWARE.ScrNr,OLD_Gamtable);
+    if HARDWARE.DoGammaCorrection
+        Screen('LoadNormalizedGammaTable',HARDWARE.ScrNr,OLD_Gamtable);
+    end
     Screen('CloseAll');ListenChar();ShowCursor;
 
     if ~QuitScript
@@ -784,11 +774,12 @@ try
         cd(fullfile(StartFolder,DataFolder));
     end
 catch e %#ok<CTCH> %if there is an error the script will go here
-    fprintf(1,'There was an error! The message was:\n%s',e.message);    
+    fprintf(1,'There was an error! The message was:\n%s',e.message);
     if HARDWARE.DoGammaCorrection
         Screen('LoadNormalizedGammaTable',HARDWARE.ScrNr,OLD_Gamtable);
     end
-    Screen('CloseAll');ListenChar();ShowCursor;psychrethrow(psychlasterror);
+    Screen('CloseAll');ListenChar();ShowCursor;
+    %psychrethrow(psychlasterror);
     %% Close up Eyelink
     if HARDWARE.EyelinkConnected
         Eyelink('Stoprecording');

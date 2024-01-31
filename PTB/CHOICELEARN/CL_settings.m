@@ -208,13 +208,13 @@ STIM.Trials.Blocked = true;
 % if blocked
 STIM.Trials.TrialsInBlocks = [... % each line defines a block
     1.*ones(1,10);...
-    2.*ones(1,10);...
+    %2.*ones(1,10);...
     ]; % 
 STIM.Trials.RandomBlocks = true;
 STIM.Trials.RandomTrials = true; % also applies to non-blocked
 STIM.Trials.BlockRepeats = 5;
 % if not blocked
-STIM.Trials.TrialsInExp = [1,2];
+STIM.Trials.TrialsInExp = [1 2];
 STIM.Trials.TrialsRepeats = 5;
 
 %% FEEDBACK =============================================================
@@ -227,19 +227,20 @@ STIM.snddir = 'snd';
 % Vertical location and size of center feedback text
 STIM.Feedback.TextY = 0; %pix
 STIM.Feedback.TextSize = 20; %pix
+STIM.Feedback.NeutralCol = [0 0 0];
 
-STIM.Feedback.TextCorrect = 'CORRECT response!';
-STIM.Feedback.TextCorrectCol = [0 0 0];
+STIM.Feedback.TextCorrect = 'CORRECT';
+STIM.Feedback.TextCorrectCol = [0 0.2 0];
 STIM.Feedback.SoundCorrect = {'correct0.wav','correct.wav'}; %{low high}
 
-STIM.Feedback.TextWrong = 'WRONG response!';
-STIM.Feedback.TextWrongCol = [0 0 0];
+STIM.Feedback.TextWrong = 'WRONG';
+STIM.Feedback.TextWrongCol = [0.2 0 0];
 STIM.Feedback.SoundWrong = 'wrong.wav';
 
 % give performance feedback occasionally
-STIM.Feedback.PerfShow = false;
-STIM.Feedback.PerfOverLastNTrials = 50;
-STIM.Feedback.PerfShowEveryNTrials = 10;
+STIM.Feedback.PerfShow = true;
+STIM.Feedback.PerfOverLastNTrials = 5;
+STIM.Feedback.PerfShowEveryNTrials = 5;
 STIM.Feedback.PerfLevels = {...
     50, 'Apprentice';...
     70, 'Warrior';...
