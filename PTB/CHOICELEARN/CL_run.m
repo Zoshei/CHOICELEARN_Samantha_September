@@ -1,4 +1,4 @@
-function CL_run(Debug)
+function CL_run(SettingsFile,Debug)
 
 %% PTB3 script for ======================================================
 % CHOICE_LEARNING experiment
@@ -16,14 +16,20 @@ function CL_run(Debug)
 
 clc; QuitScript = false;
 
-if nargin < 1
+if nargin < 2
     Debug = false;
+    if nargin < 1
+        SettingsFile = 'CL_settings';
+    end
 end
 warning off; %#ok<*WNOFF>
 DebugRect = [0 0 1024 768];
 
 %% Read in variables ----------------------------------------------------
 % First get the settings
+[RunPath,~,~] = fileparts(mfilename('fullpath'));
+run(fullfile(RunPath,SettingsFile));
+
 CL_settings;
 
 %% Create data folder if it doesn't exist yet and go there --------------

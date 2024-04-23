@@ -170,7 +170,7 @@ STIM.MaxDurFixCheck = 60;
 STIM.RequireContFix = false;
 
 % TRIALS ----------------
-% can be any number of images as long there's a position defined for ll of
+% can be any number of images as long there's a position defined for all of
 % them
 STIM.Trials.trial(1).images = [ ...
     1,...
