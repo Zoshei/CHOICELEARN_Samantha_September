@@ -15,8 +15,16 @@ end
 
 % Execute eyelink specific code
 HARDWARE.EyelinkConnected = false; % boolean
+HARDWARE.EyelinkCalibrate = true; % boolean
 HARDWARE.MeasureFixEveryNthTrials = 20; % Only works WITH eyelink
 % To be sure about eye-tracking accuracy we can use repeated calibration
+
+HARDWARE.LogLabel = 'ExpType'; 
+% will be used to generate subfolders for dfferent log types
+
+%% USING A WRAPPER RUN-FILE =============================================
+WRAPPER.GetSubjectFromWrapper = true;
+% when set to true, get the subject nfor from the wrapper script as WLOG
 
 %% BACKGROUND & FIXATION ================================================
 % Background color
@@ -27,6 +35,10 @@ STIM.Fix.Size = .3;
 
 % Fixation color
 STIM.Fix.Color = [0 0 0]; % [R G B] range: 0-1
+
+% Instruction text
+STIM.WelcomeText = ['Choose the 1 or 0 key for the cued image\n\n'...
+                    '>> Press any key to start <<'];
 
 %% STIMULUS INFO ========================================================
 % NB! For positions, note that shifting rightwards and downwards are 
@@ -185,9 +197,10 @@ STIM.Trials.trial(1).imgpos = [...
      5 -5 ...
      ]; % [H V] dva relative to fix  
 
-STIM.Trials.trial(1).cue = 1;
+STIM.Trials.trial(1).cue = 1; % leave empty for no cue
 STIM.Trials.trial(1).targ = 1; % the img index that is the target
 %--
+STIM.Trials.trial(2)=STIM.Trials.trial(1);
 STIM.Trials.trial(2).images = [ ...
     10,...
     14,...
@@ -200,7 +213,7 @@ STIM.Trials.trial(2).imgpos = [...
      5  5;...
      5 -5 ...
      ]; % [H V] dva relative to fix  
-STIM.Trials.trial(2).cue = 2;
+STIM.Trials.trial(2).cue = 2; % leave empty for no cue
 STIM.Trials.trial(2).targ = 4; % the img index that is the target
 
 % -------
@@ -220,6 +233,7 @@ STIM.Trials.TrialsRepeats = 5;
 %% FEEDBACK =============================================================
 % Feedback?
 STIM.PerformanceFeedback = true;
+STIM.UseSoundFeedback = true;
 
 % where are the sounds 
 STIM.snddir = 'snd';

@@ -1,4 +1,4 @@
-function CL_run(SettingsFile,Debug)
+function CL_run(SettingsFile,Debug,WLOG)
 
 %% PTB3 script for ======================================================
 % CHOICE_LEARNING experiment
@@ -16,10 +16,13 @@ function CL_run(SettingsFile,Debug)
 
 clc; QuitScript = false;
 
-if nargin < 2
-    Debug = false;
-    if nargin < 1
-        SettingsFile = 'CL_settings';
+if nargin < 3
+    WLOG = [];
+    if nargin < 2
+        Debug = false;
+        if nargin < 1
+            SettingsFile = 'CL_settings';
+        end
     end
 end
 warning off; %#ok<*WNOFF>
@@ -29,8 +32,6 @@ DebugRect = [0 0 1024 768];
 % First get the settings
 [RunPath,~,~] = fileparts(mfilename('fullpath'));
 run(fullfile(RunPath,SettingsFile));
-
-CL_settings;
 
 %% Create data folder if it doesn't exist yet and go there --------------
 DataFolder = 'CL_data';
@@ -47,21 +48,30 @@ try
         LOG.Handedness = 'R';
         LOG.DateTimeStr = datestr(datetime('now'), 'yyyyMMdd_HHmm'); %#ok<*DATST>
     else
-        % Get registration info & check against existing data
+        % Get registration info
         LOG.Subject = [];
-        LOG.SesNr = [];
         % Get subject info
-        while isempty(LOG.Subject)
-            INFO = inputdlg({'Subject Initials', ...
-                'Gender (m/f/x)', 'Age', 'Left(L)/Right(R) handed'},...
-                'Subject',1,{'XX','x','0','R'},'on');
-            LOG.Subject = INFO{1};
-            LOG.Gender = INFO{2};
-            LOG.Age = str2double(INFO{3});
-            LOG.Handedness = INFO{4};
+        if WRAPPER.GetSubjectFromWrapper && ~isempty(WLOG)
+            LOG.Subject = WLOG.Subject;
+            LOG.Gender =WLOG.Gender;
+            LOG.Age = WLOG.Age;
+            LOG.Handedness = WLOG.Handedness;
+            % Get timestring id
+            LOG.DateTimeStr = WLOG.DateTimeStr;
+        else
+            while isempty(LOG.Subject)
+                INFO = inputdlg({'Subject Initials', ...
+                    'Gender (m/f/x)', 'Age', 'Left(L)/Right(R) handed'},...
+                    'Subject',1,{'XX','x','0','R'},'on');
+                LOG.Subject = INFO{1};
+                LOG.Gender = INFO{2};
+                LOG.Age = str2double(INFO{3});
+                LOG.Handedness = INFO{4};
+                % Get timestring id
+                LOG.DateTimeStr = datestr(datetime('now'), 'yyyymmdd_HHMM');
+            end
         end
-        % Get timestring id
-        LOG.DateTimeStr = datestr(datetime('now'), 'yyyymmdd_HHMM');
+        
     end
 
     if HARDWARE.EyelinkConnected %#ok<*USENS>
@@ -275,7 +285,8 @@ try
     %% Calibrate EYELINK ------------------------------------------------
     if HARDWARE.EyelinkConnected
         % open file to record data to
-        [~,~] = mkdir(fullfile(StartFolder, DataFolder,'Eyelink_Log'));
+        [~,~] = mkdir(fullfile(StartFolder,DataFolder,...
+            HARDWARE.LogLabel,'Eyelink_Log'));
         EL.edfFile = 'TempEL'; %NB! Name cannot be more than 8 digits long
         cd(fullfile(StartFolder, DataFolder))
         Eyelink('Openfile',EL.edfFile);
@@ -284,9 +295,11 @@ try
         EL.el.foregroundcolour = HARDWARE.black;
 
         % Calibrate the eye tracker
-        EyelinkDoTrackerSetup(EL.el); % control further from eyelink pc
-        % do a final check of calibration using driftcorrection
-        %EyelinkDoDriftCorrection(EL.el);
+        if HARDWARE.EyelinkCalibrate
+            EyelinkDoTrackerSetup(EL.el); % control further from eyelink pc
+            % do a final check of calibration using driftcorrection
+            %EyelinkDoDriftCorrection(EL.el);
+        end
 
         %% Initialize ---------------------------------------------------
         % start recording eye position
@@ -381,8 +394,7 @@ try
                 Screen('FillRect',HARDWARE.window,...
                     STIM.BackColor*HARDWARE.white);
                 DrawFormattedText(HARDWARE.window,...
-                    ['Choose the 1 or 0 key for the cued image\n\n'...
-                    '>> Press any key to start <<'],'center',....
+                    STIM.WelcomeText,'center',....
                     'center',STIM.TextIntensity);
                 fprintf('\n>>Press key to start<<\n');
                 vbl = Screen('Flip', HARDWARE.window);
@@ -487,7 +499,10 @@ try
 
                 % CUE --
                 if vbl - LOG.ExpOnset >= LOG.Trial(TR).StimPhaseOnset + ...
-                        STIM.Times.Cue(1)/1000 && ~QuitScript
+                        STIM.Times.Cue(1)/1000 && ...
+                        ~isempty(STIM.Trials.trial(tidx).cue) && ...
+                        ~QuitScript
+                    
                     % Draw cue
                     tidx = LOG.TrialList(TR,1);
                     cidx = STIM.Trials.trial(tidx).cue;
@@ -659,14 +674,16 @@ try
                 vbl = Screen('Flip', HARDWARE.window);
 
                 % play sound --
-                if CorrectResponse
-                    if nPoints == 0
-                        sound(snd(1).wav,snd(1).fs);
+                if STIM.UseSoundFeedback
+                    if CorrectResponse
+                        if nPoints == 0
+                            sound(snd(1).wav,snd(1).fs);
+                        else
+                            sound(snd(2).wav,snd(2).fs);
+                        end
                     else
-                        sound(snd(2).wav,snd(2).fs);
+                        sound(snd(3).wav,snd(3).fs);
                     end
-                else
-                    sound(snd(3).wav,snd(3).fs);
                 end
 
                 % check timing --
@@ -754,7 +771,7 @@ try
     pause(.5)
 
     %% Save the data
-    save(fullfile(StartFolder,DataFolder,LOG.FileName),'HARDWARE','STIM','LOG');
+    save(fullfile(StartFolder,DataFolder,HARDWARE.LogLabel,LOG.FileName),'HARDWARE','STIM','LOG');
 
     %% Restore screen
     if HARDWARE.DoGammaCorrection
@@ -770,7 +787,7 @@ try
 
     %% Close up Eyelink
     if HARDWARE.EyelinkConnected
-        cd(fullfile(StartFolder, DataFolder,'Eyelink_Log'))
+        cd(fullfile(StartFolder, DataFolder,HARDWARE.LogLabel,'Eyelink_Log'))
         Eyelink('Stoprecording');
         Eyelink('Closefile');
         eyelink_receive_file(EL.edfFile);
