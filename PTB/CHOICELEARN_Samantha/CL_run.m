@@ -323,6 +323,8 @@ try
             KeyWasDown = false;
         end
 
+        tidx = LOG.TrialList(TR,1);
+
         % Trial-start to Eyelink
         if HARDWARE.EyelinkConnected
             pause(0.1) % send some samples to edf file
@@ -504,7 +506,6 @@ try
                         ~QuitScript
                     
                     % Draw cue
-                    tidx = LOG.TrialList(TR,1);
                     cidx = STIM.Trials.trial(tidx).cue;
                     cwidth = STIM.cue(cidx).sz(1).*HARDWARE.Deg2Pix;
 
@@ -771,6 +772,7 @@ try
     pause(.5)
 
     %% Save the data
+    [~,~] = mkdir(fullfile(StartFolder,DataFolder,HARDWARE.LogLabel));
     save(fullfile(StartFolder,DataFolder,HARDWARE.LogLabel,LOG.FileName),'HARDWARE','STIM','LOG');
 
     %% Restore screen
