@@ -19,7 +19,7 @@ HARDWARE.EyelinkCalibrate = true; % boolean
 HARDWARE.MeasureFixEveryNthTrials = 20; % Only works WITH eyelink
 % To be sure about eye-tracking accuracy we can use repeated calibration
 
-HARDWARE.LogLabel = 'ExpType'; 
+HARDWARE.LogLabel = 'ExpType'; % change this!
 % will be used to generate subfolders for dfferent log types
 
 %% USING A WRAPPER RUN-FILE =============================================
