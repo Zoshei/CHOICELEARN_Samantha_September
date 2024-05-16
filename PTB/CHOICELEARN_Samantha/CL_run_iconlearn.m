@@ -768,6 +768,11 @@ try
     pause(.5)
 
     %% Save the data
+    % Check if the directory exists
+    if ~exist(DataFolder, 'dir')
+    % If the directory does not exist, create it
+    mkdir(DataFolder);
+    end
     save(fullfile(StartFolder,DataFolder,HARDWARE.LogLabel,LOG.FileName),'HARDWARE','STIM','LOG');
 
     %% Restore screen
