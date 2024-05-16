@@ -545,11 +545,13 @@ try
                         ImageRect = CenterRectOnPoint(...
                             [0 0 STIM.imgsz(1) STIM.imgsz(2)].*HARDWARE.Deg2Pix,...
                             HARDWARE.Center(1)+STIM.Trials.trial(tidx).imgpos(imgidx,1)*HARDWARE.Deg2Pix,...
-                            HARDWARE.Center(2)+STIM.Trials.trial(tidx).imgpos(imgidx,2)*HARDWARE.Deg2Pix);
-                        Screen('DrawTexture', HARDWARE.window,...
-                            STIM.img(imagei).tex,[],ImageRect)
-                    end
-                   end
+                      HARDWARE.Center(2)+STIM.Trials.trial(tidx).imgpos(imgidx,2)*HARDWARE.Deg2Pix);
+        Screen('DrawTexture', HARDWARE.window,...
+            STIM.img(imagei).tex,[],ImageRect)
+    end
+end
+
+
 
                 % FIX --
                 % Draw fix dot
