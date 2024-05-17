@@ -39,7 +39,7 @@ StartFolder = pwd;
 [~,~] = mkdir(fullfile(StartFolder,DataFolder));
 
 %% Run the experiment ---------------------------------------------------
-try
+% try
     %% Initialize & Calculate Stimuli -----------------------------------
     if Debug
         LOG.Subject = 'TEST';
@@ -239,6 +239,7 @@ try
     
     for trial_num = 1:2  % Adjust as needed for the number of trials
         % Randomly pick one relevant and one redundant image
+        disp(["lengte relevant_files: ", num2str(length(relevant_files))])
         relevant_index = randi(length(relevant_files));
         redundant_index = randi(length(redundant_files));
         
@@ -833,18 +834,18 @@ try
         Eyelink('ShutDown');
         cd(fullfile(StartFolder,DataFolder));
     end
-catch e %#ok<CTCH> %if there is an error the script will go here
-    fprintf(1,'There was an error! The message was:\n%s',e.message);
-    if HARDWARE.DoGammaCorrection
-        Screen('LoadNormalizedGammaTable',HARDWARE.ScrNr,OLD_Gamtable);
-    end
-    Screen('CloseAll');ListenChar();ShowCursor;
-    %psychrethrow(psychlasterror);
-    %% Close up Eyelink
-    if HARDWARE.EyelinkConnected
-        Eyelink('Stoprecording');
-        Eyelink('Closefile');
-        Eyelink('ShutDown');
-    end
-end
+% catch e %#ok<CTCH> %if there is an error the script will go here
+%     fprintf(1,'There was an error! The message was:\n%s',e.message);
+%     if HARDWARE.DoGammaCorrection
+%         Screen('LoadNormalizedGammaTable',HARDWARE.ScrNr,OLD_Gamtable);
+%     end
+%     Screen('CloseAll');ListenChar();ShowCursor;
+%     %psychrethrow(psychlasterror);
+%     %% Close up Eyelink
+%     if HARDWARE.EyelinkConnected
+%         Eyelink('Stoprecording');
+%         Eyelink('Closefile');
+%         Eyelink('ShutDown');
+%     end
+% end
 cd(StartFolder); % back to where we started

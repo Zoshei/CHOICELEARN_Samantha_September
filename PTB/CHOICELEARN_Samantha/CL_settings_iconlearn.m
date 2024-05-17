@@ -59,26 +59,26 @@ STIM.imgsz = [3 3];
 
 % read in folders and pick first picture
 % Define paths to subfolders
-relevant_dir = fullfile(STIM.bitmapdir, 'Relevant');
-redundant_dir = fullfile(STIM.bitmapdir, 'Redundant');
+relevant_dir = fullfile(STIM.bitmapdir, 'relevant');
+redundant_dir = fullfile(STIM.bitmapdir, 'redundant');
 distractor_dir = STIM.bitmapdir; % Assuming distractors are in the main directory
 
 % Load relevant images
 relevant_files = dir(fullfile(relevant_dir, '*.bmp'));
 for i = 1:length(relevant_files)
-    STIM.img(i).fn = fullfile('Relevant', relevant_files(i).name);
+    STIM.img(i).fn = fullfile('relevant', relevant_files(i).name);
     STIM.img(i).type = 'relevant';
     STIM.img(i).correctresp = 1; % define correct response as needed
-    STIM.img(i).points = 10; % define points as needed
+%     STIM.img(i).points = 10; % define points as needed
 end
 
 % Load redundant images
 redundant_files = dir(fullfile(redundant_dir, '*.bmp'));
 for i = 1:length(redundant_files)
-    STIM.img(i + length(relevant_files)).fn = fullfile('Redundant', redundant_files(i).name);
+    STIM.img(i + length(relevant_files)).fn = fullfile('redundant', redundant_files(i).name);
     STIM.img(i + length(relevant_files)).type = 'redundant';
     STIM.img(i + length(relevant_files)).correctresp = 1; % define correct response as needed
-    STIM.img(i + length(relevant_files)).points = 10; % define points as needed
+%     STIM.img(i + length(relevant_files)).points = 10; % define points as needed
 end
 
 % Load distractor images
@@ -89,76 +89,76 @@ for i = 1:length(distractor_files)
     STIM.img(i + length(relevant_files) + length(redundant_files)).fn = distractor_files(i).name;
     STIM.img(i + length(relevant_files) + length(redundant_files)).type = 'distractor';
     STIM.img(i + length(relevant_files) + length(redundant_files)).correctresp = 'undefined';
-    STIM.img(i + length(relevant_files) + length(redundant_files)).points = 0;
+%     STIM.img(i + length(relevant_files) + length(redundant_files)).points = 0;
 end
 
-% relevant ----
-STIM.img(1).fn = '1.bmp';
-STIM.img(1).correctresp = 1; %1/2/undefined
-STIM.img(1).points = 10;
-
-STIM.img(2).fn = '2.bmp';
-STIM.img(2).correctresp = 1; 
-STIM.img(2).points = 0;
-
-STIM.img(3).fn = '3.bmp';
-STIM.img(3).correctresp = 2; 
-STIM.img(3).points = 10;
-
-STIM.img(4).fn = '4.bmp';
-STIM.img(4).correctresp = 2; 
-STIM.img(4).points = 0;
-
-% cued distractor ----
-STIM.img(5).fn = '5.bmp';
-STIM.img(5).correctresp = 'undefined';
-STIM.img(5).points = 10;
-
-STIM.img(6).fn = '6.bmp';
-STIM.img(6).correctresp = 'undefined';
-STIM.img(6).points = 0;
-
-STIM.img(7).fn = '7.bmp';
-STIM.img(7).correctresp = 'undefined';
-STIM.img(7).points = 10;
-
-STIM.img(8).fn = '8.bmp';
-STIM.img(8).correctresp = 'undefined';
-STIM.img(8).points = 0;
-
-% redundant ----
-STIM.img(9).fn = '9.bmp';
-STIM.img(9).correctresp = 1; 
-STIM.img(9).points = 10;
-
-STIM.img(10).fn = '10.bmp';
-STIM.img(10).correctresp = 1; 
-STIM.img(10).points = 0;
-
-STIM.img(11).fn = '11.bmp';
-STIM.img(11).correctresp = 2; 
-STIM.img(11).points = 10;
-
-STIM.img(12).fn = '12.bmp';
-STIM.img(12).correctresp = 2; 
-STIM.img(12).points = 0;
-
-% uncued distractor ----
-STIM.img(13).fn = '13.bmp';
-STIM.img(13).correctresp = 'undefined';
-STIM.img(13).points = 10;
-
-STIM.img(14).fn = '14.bmp';
-STIM.img(14).correctresp = 'undefined';
-STIM.img(14).points = 0;
-
-STIM.img(15).fn = '15.bmp';
-STIM.img(15).correctresp = 'undefined';
-STIM.img(15).points = 10;
-
-STIM.img(16).fn = '16.bmp';
-STIM.img(16).correctresp = 'undefined';
-STIM.img(16).points = 0;
+% % relevant ----
+% STIM.img(1).fn = '1.bmp';
+% STIM.img(1).correctresp = 1; %1/2/undefined
+% STIM.img(1).points = 10;
+% 
+% STIM.img(2).fn = '2.bmp';
+% STIM.img(2).correctresp = 1; 
+% STIM.img(2).points = 0;
+% 
+% STIM.img(3).fn = '3.bmp';
+% STIM.img(3).correctresp = 2; 
+% STIM.img(3).points = 10;
+% 
+% STIM.img(4).fn = '4.bmp';
+% STIM.img(4).correctresp = 2; 
+% STIM.img(4).points = 0;
+% 
+% % cued distractor ----
+% STIM.img(5).fn = '5.bmp';
+% STIM.img(5).correctresp = 'undefined';
+% STIM.img(5).points = 10;
+% 
+% STIM.img(6).fn = '6.bmp';
+% STIM.img(6).correctresp = 'undefined';
+% STIM.img(6).points = 0;
+% 
+% STIM.img(7).fn = '7.bmp';
+% STIM.img(7).correctresp = 'undefined';
+% STIM.img(7).points = 10;
+% 
+% STIM.img(8).fn = '8.bmp';
+% STIM.img(8).correctresp = 'undefined';
+% STIM.img(8).points = 0;
+% 
+% % redundant ----
+% STIM.img(9).fn = '9.bmp';
+% STIM.img(9).correctresp = 1; 
+% STIM.img(9).points = 10;
+% 
+% STIM.img(10).fn = '10.bmp';
+% STIM.img(10).correctresp = 1; 
+% STIM.img(10).points = 0;
+% 
+% STIM.img(11).fn = '11.bmp';
+% STIM.img(11).correctresp = 2; 
+% STIM.img(11).points = 10;
+% 
+% STIM.img(12).fn = '12.bmp';
+% STIM.img(12).correctresp = 2; 
+% STIM.img(12).points = 0;
+% 
+% % uncued distractor ----
+% STIM.img(13).fn = '13.bmp';
+% STIM.img(13).correctresp = 'undefined';
+% STIM.img(13).points = 10;
+% 
+% STIM.img(14).fn = '14.bmp';
+% STIM.img(14).correctresp = 'undefined';
+% STIM.img(14).points = 0;
+% 
+% STIM.img(15).fn = '15.bmp';
+% STIM.img(15).correctresp = 'undefined';
+% STIM.img(15).points = 10;
+% 
+% STIM.img(16).fn = '16.bmp';
+% STIM.img(16).correctresp = 'undefined';
+% STIM.img(16).points = 0;
 
 
 % etcetera 
