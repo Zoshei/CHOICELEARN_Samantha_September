@@ -227,6 +227,41 @@ try
     % number of unique images may not be prohibitively high in this
     % experiment
 
+    %CGPT
+    % Number of images per trial
+        num_images = 6;
+
+    % Define the possible positions (in degrees visual angle, dva)
+    circle_radius = 5;
+    angles = linspace(0, 2*pi, num_images + 1);
+    angles(end) = []; % Remove the last angle to avoid overlap
+    positions = [circle_radius * cos(angles)' circle_radius * sin(angles)'];
+    
+    for trial_num = 1:2  % Adjust as needed for the number of trials
+        % Randomly pick one relevant and one redundant image
+        relevant_index = randi(length(relevant_files));
+        redundant_index = randi(length(redundant_files));
+        
+        % Randomize the order of distractors
+        distractor_indices = randperm(length(distractor_files), num_images - 2);
+        
+        % Combine relevant, redundant, and distractors
+        images = [relevant_index, redundant_index + length(relevant_files), ...
+                  distractor_indices + length(relevant_files) + length(redundant_files)];
+        
+        % Randomize the positions
+        randomized_positions = positions(randperm(num_images), :);
+        
+        STIM.Trials.trial(trial_num).images = images;
+        STIM.Trials.trial(trial_num).imgpos = randomized_positions;
+        
+        % Set relevant image as target
+        STIM.Trials.trial(trial_num).targ = 1;  % relevant image is the first one in the list
+        
+        % Define the cue (assuming a fixed cue for simplicity)
+        STIM.Trials.trial(trial_num).cue = 1; % Adjust as needed
+    end
+
     uniquetrials = unique(LOG.TrialList(:,1));
     allimages = [];
     for ut = uniquetrials'

@@ -58,6 +58,39 @@ STIM.Key2 = '0)';
 STIM.imgsz = [3 3];
 
 % read in folders and pick first picture
+% Define paths to subfolders
+relevant_dir = fullfile(STIM.bitmapdir, 'Relevant');
+redundant_dir = fullfile(STIM.bitmapdir, 'Redundant');
+distractor_dir = STIM.bitmapdir; % Assuming distractors are in the main directory
+
+% Load relevant images
+relevant_files = dir(fullfile(relevant_dir, '*.bmp'));
+for i = 1:length(relevant_files)
+    STIM.img(i).fn = fullfile('Relevant', relevant_files(i).name);
+    STIM.img(i).type = 'relevant';
+    STIM.img(i).correctresp = 1; % define correct response as needed
+    STIM.img(i).points = 10; % define points as needed
+end
+
+% Load redundant images
+redundant_files = dir(fullfile(redundant_dir, '*.bmp'));
+for i = 1:length(redundant_files)
+    STIM.img(i + length(relevant_files)).fn = fullfile('Redundant', redundant_files(i).name);
+    STIM.img(i + length(relevant_files)).type = 'redundant';
+    STIM.img(i + length(relevant_files)).correctresp = 1; % define correct response as needed
+    STIM.img(i + length(relevant_files)).points = 10; % define points as needed
+end
+
+% Load distractor images
+distractor_files = dir(fullfile(distractor_dir, '*.bmp'));
+% Exclude files that are in Relevant or Redundant folders
+distractor_files = distractor_files(~ismember({distractor_files.name}, {relevant_files.name, redundant_files.name}));
+for i = 1:length(distractor_files)
+    STIM.img(i + length(relevant_files) + length(redundant_files)).fn = distractor_files(i).name;
+    STIM.img(i + length(relevant_files) + length(redundant_files)).type = 'distractor';
+    STIM.img(i + length(relevant_files) + length(redundant_files)).correctresp = 'undefined';
+    STIM.img(i + length(relevant_files) + length(redundant_files)).points = 0;
+end
 
 % relevant ----
 STIM.img(1).fn = '1.bmp';
