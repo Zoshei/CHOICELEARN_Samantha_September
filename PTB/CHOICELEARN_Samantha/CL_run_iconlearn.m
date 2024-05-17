@@ -221,6 +221,26 @@ StartFolder = pwd;
         end
     end
 
+  % New: Initialize relevant and redundant block counters
+    relevant_block_index = 1; % New: Initialize relevant block index
+    redundant_block_index = 1; % New: Initialize redundant block index
+    correct_responses_in_block = 0; % New: Initialize correct response counter
+    trials_in_block = 0; % New: Initialize trial counter
+
+    % New: Preload images in the first blocks
+    for i = 1:5
+        relevant_image = STIM.img(relevant_block_index + (i - 1)).fn;
+        redundant_image = STIM.img(length(relevant_files) + redundant_block_index + (i - 1)).fn;
+        STIM.img(relevant_block_index + (i - 1)).img = imread(fullfile(STIM.bitmapdir, relevant_image));
+        STIM.img(relevant_block_index + (i - 1)).tex = Screen('MakeTexture', HARDWARE.window, STIM.img(relevant_block_index + (i - 1)).img);
+        STIM.img(length(relevant_files) + redundant_block_index + (i - 1)).img = imread(fullfile(STIM.bitmapdir, redundant_image));
+        STIM.img(length(relevant_files) + redundant_block_index + (i - 1)).tex = Screen('MakeTexture', HARDWARE.window, STIM.img(length(relevant_files) + redundant_block_index + (i - 1)).img);
+    end
+
+    % New: Set initial stimuli for the first trials
+    current_relevant_index = relevant_block_index;
+    current_redundant_index = redundant_block_index;
+
     % load images that are needed ---
     % we may need to do this in a more sensisble way to avoid slow-downs
     % or memory issues. However, try to do it the simple way first as the
@@ -683,6 +703,27 @@ StartFolder = pwd;
                 end
                 LOG.Trial(TR).RespCorr = CorrectResponse;
                 CorrResp = [CorrResp; CorrectResponse];
+                trials_in_block = trials_in_block + 1; % New: Increment trial counter
+
+                % New: Check if accuracy criteria met to switch images
+                if trials_in_block >= 5 % Check if at least 20 trials
+                    accuracy = correct_responses_in_block / trials_in_block;
+                    if accuracy >= 0.85
+                        correct_responses_in_block = 0; % Reset correct response counter
+                        trials_in_block = 0; % Reset trial counter
+                        current_relevant_index = current_relevant_index + 1;
+                        current_redundant_index = current_redundant_index + 1;
+                        % Preload next images in the block
+                        if current_relevant_index <= relevant_block_index + 4 % Ensure within block limits
+                            relevant_image = STIM.img(current_relevant_index).fn;
+                            redundant_image = STIM.img(length(relevant_files) + current_redundant_index).fn;
+                            STIM.img(current_relevant_index).img = imread(fullfile(STIM.bitmapdir, relevant_image));
+                            STIM.img(current_relevant_index).tex = Screen('MakeTexture', HARDWARE.window, STIM.img(current_relevant_index).img);
+                            STIM.img(length(relevant_files) + current_redundant_index).img = imread(fullfile(STIM.bitmapdir, redundant_image));
+                            STIM.img(length(relevant_files) + current_redundant_index).tex = Screen('MakeTexture', HARDWARE.window, STIM.img(length(relevant_files) + current_redundant_index).img);
+                        end
+                    end
+                end
 
                 % display feedback text --
                 % set text to be bigger

@@ -63,22 +63,37 @@ relevant_dir = fullfile(STIM.bitmapdir, 'relevant');
 redundant_dir = fullfile(STIM.bitmapdir, 'redundant');
 distractor_dir = STIM.bitmapdir; % Assuming distractors are in the main directory
 
-% Load relevant images
+% Load relevant images in blocks
 relevant_files = dir(fullfile(relevant_dir, '*.bmp'));
-for i = 1:length(relevant_files)
-    STIM.img(i).fn = fullfile('relevant', relevant_files(i).name);
-    STIM.img(i).type = 'relevant';
-    STIM.img(i).correctresp = 1; % define correct response as needed
-%     STIM.img(i).points = 10; % define points as needed
+relevant_blocks = reshape({relevant_files.name}, 5, [])';
+
+% Load redundant images in blocks
+redundant_files = dir(fullfile(redundant_dir, '*.bmp'));
+redundant_blocks = reshape({redundant_files.name}, 5, [])';
+
+% Initialize STIM.img
+STIM.img = struct();
+
+% Organize relevant images into blocks
+for block_num = 1:size(relevant_blocks, 1)
+    for img_num = 1:size(relevant_blocks, 2)
+        idx = (block_num - 1) * size(relevant_blocks, 2) + img_num;
+        STIM.img(idx).fn = fullfile('relevant', relevant_blocks{block_num, img_num});
+        STIM.img(idx).type = 'relevant';
+        STIM.img(idx).block = block_num;
+        STIM.img(idx).correctresp = 1; % define correct response as needed
+    end
 end
 
-% Load redundant images
-redundant_files = dir(fullfile(redundant_dir, '*.bmp'));
-for i = 1:length(redundant_files)
-    STIM.img(i + length(relevant_files)).fn = fullfile('redundant', redundant_files(i).name);
-    STIM.img(i + length(relevant_files)).type = 'redundant';
-    STIM.img(i + length(relevant_files)).correctresp = 1; % define correct response as needed
-%     STIM.img(i + length(relevant_files)).points = 10; % define points as needed
+% Organize redundant images into blocks
+for block_num = 1:size(redundant_blocks, 1)
+    for img_num = 1:size(redundant_blocks, 2)
+        idx = length(relevant_files) + (block_num - 1) * size(redundant_blocks, 2) + img_num;
+        STIM.img(idx).fn = fullfile('redundant', redundant_blocks{block_num, img_num});
+        STIM.img(idx).type = 'redundant';
+        STIM.img(idx).block = block_num;
+        STIM.img(idx).correctresp = 1; % define correct response as needed
+    end
 end
 
 % Load distractor images
@@ -91,6 +106,25 @@ for i = 1:length(distractor_files)
     STIM.img(i + length(relevant_files) + length(redundant_files)).correctresp = 'undefined';
 %     STIM.img(i + length(relevant_files) + length(redundant_files)).points = 0;
 end
+
+% % Load relevant images
+% relevant_files = dir(fullfile(relevant_dir, '*.bmp'));
+% for i = 1:length(relevant_files)
+%     STIM.img(i).fn = fullfile('relevant', relevant_files(i).name);
+%     STIM.img(i).type = 'relevant';
+%     STIM.img(i).correctresp = 1; % define correct response as needed
+% %     STIM.img(i).points = 10; % define points as needed
+% end
+% 
+% % Load redundant images
+% redundant_files = dir(fullfile(redundant_dir, '*.bmp'));
+% for i = 1:length(redundant_files)
+%     STIM.img(i + length(relevant_files)).fn = fullfile('redundant', redundant_files(i).name);
+%     STIM.img(i + length(relevant_files)).type = 'redundant';
+%     STIM.img(i + length(relevant_files)).correctresp = 1; % define correct response as needed
+% %     STIM.img(i + length(relevant_files)).points = 10; % define points as needed
+% end
+
 
 % % relevant ----
 % STIM.img(1).fn = '1.bmp';
