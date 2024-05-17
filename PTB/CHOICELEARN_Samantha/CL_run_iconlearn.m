@@ -557,22 +557,8 @@ try
 
 
                 % IMAGES --
-%                 if vbl - LOG.ExpOnset >= LOG.Trial(TR).StimPhaseOnset + ...
-%                         STIM.Times.Stim(1)/1000 && ~QuitScript
-%                     % Draw stim images
-%                     tidx = LOG.TrialList(TR,1);
-%                     for imgidx = 1: length(STIM.Trials.trial(tidx).images)
-%                         imagei = STIM.Trials.trial(tidx).images(imgidx);
-%                         ImageRect = CenterRectOnPoint(...
-%                             [0 0 STIM.imgsz(1) STIM.imgsz(2)].*HARDWARE.Deg2Pix,...
-%                             HARDWARE.Center(1)+STIM.Trials.trial(tidx).imgpos(imgidx,1)*HARDWARE.Deg2Pix,...
-%                             HARDWARE.Center(2)+STIM.Trials.trial(tidx).imgpos(imgidx,2)*HARDWARE.Deg2Pix);
-%                         Screen('DrawTexture', HARDWARE.window,...
-%                             STIM.img(imagei).tex,[],ImageRect)
-%                     end
-%                 end
-                   if vbl - LOG.ExpOnset >= LOG.Trial(TR).StimPhaseOnset + ...
-                            STIM.Times.Stim(1)/1000 && ~QuitScript
+                if vbl - LOG.ExpOnset >= LOG.Trial(TR).StimPhaseOnset + ...
+                        STIM.Times.Stim(1)/1000 && ~QuitScript
                     % Draw stim images
                     tidx = LOG.TrialList(TR,1);
                     for imgidx = 1: length(STIM.Trials.trial(tidx).images)
@@ -584,7 +570,8 @@ try
                         Screen('DrawTexture', HARDWARE.window,...
                             STIM.img(imagei).tex,[],ImageRect)
                     end
-                   end
+                end
+
 
                 % FIX --
                 % Draw fix dot
