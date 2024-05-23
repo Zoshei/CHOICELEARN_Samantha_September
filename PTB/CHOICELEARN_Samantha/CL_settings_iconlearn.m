@@ -98,6 +98,7 @@ end
 
 % Load distractor images
 distractor_files = dir(fullfile(distractor_dir, '*.bmp'));
+
 % Exclude files that are in Relevant or Redundant folders
 distractor_files = distractor_files(~ismember({distractor_files.name}, {relevant_files.name, redundant_files.name}));
 for i = 1:length(distractor_files)
@@ -116,7 +117,7 @@ end
 % %     STIM.img(i).points = 10; % define points as needed
 % end
 % 
-% % Load redundant images
+% Load redundant images
 % redundant_files = dir(fullfile(redundant_dir, '*.bmp'));
 % for i = 1:length(redundant_files)
 %     STIM.img(i + length(relevant_files)).fn = fullfile('redundant', redundant_files(i).name);

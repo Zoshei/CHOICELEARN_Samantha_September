@@ -258,16 +258,25 @@ positions = [circle_radius * cos(angles)' circle_radius * sin(angles)'];
 for trial_num = 1:length(LOG.TrialList)
     % Use the current relevant and redundant images
     relevant_index = current_relevant_index;
-    redundant_index = current_redundant_index;
+    redundant_index = length(relevant_files) + 1; %start of redundant files
+
+    % DEBUG: Print relevant and redundant image paths for the current trial
+    disp(['Trial ', num2str(trial_num), ': Relevant image: ' STIM.img(relevant_index).fn]);
+    disp(['Trial ', num2str(trial_num), ': Redundant image: ' STIM.img(redundant_index).fn]);
 
     % Randomize the order of distractors
     distractor_indices = randperm(length(distractor_files), num_images - 2);
+
+    % DEBUG: Print distractor image paths
+    for d = 1:length(distractor_indices)
+        disp(['Trial ', num2str(trial_num), ': Distractor image: ' STIM.img(length(relevant_files) + length(redundant_files) + distractor_indices(d)).fn]);
+    end
 
     % Combine relevant, redundant, and distractors
     images = [relevant_index, redundant_index, ...
               distractor_indices + length(relevant_files) + length(redundant_files)];
 
-    % Print the images being used for this trial
+    % DEBUG: Print the images being used for this trial
     disp(['Trial ', num2str(trial_num), ': Relevant = ', STIM.img(relevant_index).fn, ...
           ', Redundant = ', STIM.img(redundant_index).fn, ...
           ', Distractors = ', strjoin({STIM.img(distractor_indices + length(relevant_files) + length(redundant_files)).fn}, ', ')]);
@@ -809,6 +818,10 @@ end
                             [0 0 STIM.imgsz(1) STIM.imgsz(2)].*HARDWARE.Deg2Pix,...
                             HARDWARE.Center(1)+STIM.Trials.trial(tidx).imgpos(imgidx,1)*HARDWARE.Deg2Pix,...
                             HARDWARE.Center(2)+STIM.Trials.trial(tidx).imgpos(imgidx,2)*HARDWARE.Deg2Pix);
+
+                        % DEBUG: Print the image being drawn
+                        disp(['Drawing image: ' STIM.img(imagei).fn]);
+
                         Screen('DrawTexture', HARDWARE.window,...
                             STIM.img(imagei).tex,[],ImageRect)
                     end
