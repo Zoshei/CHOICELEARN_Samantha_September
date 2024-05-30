@@ -93,7 +93,7 @@ StartFolder = pwd;
     %Do some basic initializing
     AssertOpenGL;
     KbName('UnifyKeyNames');
-    HideCursor;
+    %HideCursor;
 
     %Define response keys
     Key1 = KbName(STIM.Key1); %#ok<*NODEF>
@@ -105,7 +105,7 @@ StartFolder = pwd;
     else
         KeyBreak = KbName('ESCAPE');
     end
-    ListenChar(2);
+    %ListenChar(2);
 
     % Open a double-buffered window on screen
     if Debug
@@ -187,6 +187,7 @@ StartFolder = pwd;
     %% Prepare stimuli --------------------------------------------------
 % Generate a trial list ---
 LOG.TrialList = [];
+nextpics=0;
 if STIM.Trials.Blocked
     for r = 1:STIM.Trials.BlockRepeats
         % block order
@@ -221,18 +222,34 @@ else
             ones(length(trialorder),1).*r];
     end
 end
-
+    
 %% Initialize counters for block accuracy
-current_relevant_index = 1;
+current_relevant_index = 1; % Start from the beginning of relevant images
 current_redundant_index = length(relevant_files) + 1; % Start from the beginning of the redundant images
 correct_responses_in_block = 0;
 trials_in_block = 0;
+nextpics = 0; % Initialize nextpics variable
 
 % Preload the initial relevant and redundant images
 STIM.img(current_relevant_index).img = imread(fullfile(STIM.bitmapdir, STIM.img(current_relevant_index).fn));
 STIM.img(current_relevant_index).tex = Screen('MakeTexture', HARDWARE.window, STIM.img(current_relevant_index).img);
 STIM.img(current_redundant_index).img = imread(fullfile(STIM.bitmapdir, STIM.img(current_redundant_index).fn));
 STIM.img(current_redundant_index).tex = Screen('MakeTexture', HARDWARE.window, STIM.img(current_redundant_index).img);
+
+% DEBUG: Add initial disp statements
+disp(['Initial relevant image: ', STIM.img(current_relevant_index).fn]);
+disp(['Initial redundant image: ', STIM.img(current_redundant_index).fn]);
+
+% Preload all images (relevant, redundant, and distractors)
+for i = 1:length(STIM.img)
+    if ~isempty(STIM.img(i).fn)
+        STIM.img(i).img = imread(fullfile(STIM.bitmapdir, STIM.img(i).fn));
+        STIM.img(i).tex = Screen('MakeTexture', HARDWARE.window, STIM.img(i).img);
+        % Add debug statement to verify preloading
+        disp(['Preloading image: ' STIM.img(i).fn]);
+    end
+end
+
 
 % Initialize variables to track correct responses and trials
 relevant_block_index = 1; % Start with the first block of relevant images
@@ -244,9 +261,9 @@ disp(['Loading redundant image: ', STIM.img(current_redundant_index).fn]);
 STIM.img(current_redundant_index).img = imread(fullfile(STIM.bitmapdir, STIM.img(current_redundant_index).fn));
 STIM.img(current_redundant_index).tex = Screen('MakeTexture', HARDWARE.window, STIM.img(current_redundant_index).img);
 
-% Set initial stimuli indices
-current_relevant_index = relevant_block_index;
-current_redundant_index = redundant_block_index;
+% % Set initial stimuli indices
+% current_relevant_index = relevant_block_index;
+% current_redundant_index = redundant_block_index;
 
 % Define the possible positions (in degrees visual angle, dva)
 num_images = 6;  % Total number of images per trial
@@ -302,10 +319,10 @@ end
 uniqueimages = unique(allimages);
 
 % pre-allocate variable for all possible images
-for i = 1: length(STIM.img)
-    STIM.img(i).img = [];
-    STIM.img(i).tex = [];
-end
+% for i = 1: length(STIM.img)
+%     STIM.img(i).img = [];
+%     STIM.img(i).tex = [];
+% end
 
 % load the ones we need
 for ui = uniqueimages
@@ -434,6 +451,7 @@ end
                             end
                             KeyIsDown = false;
                         end
+
                         % Draw fixdot
                         Screen('FillRect',HARDWARE.window,...
                             STIM.BackColor*HARDWARE.white);
@@ -587,27 +605,27 @@ end
                         cwidth);
 %                 end
 
-
                 % IMAGES --
-                if vbl - LOG.ExpOnset >= LOG.Trial(TR).StimPhaseOnset + ...
-                        STIM.Times.Stim(1)/1000 && ~QuitScript
+                if vbl - LOG.ExpOnset >= LOG.Trial(TR).StimPhaseOnset + STIM.Times.Stim(1)/1000 && ~QuitScript
                     % Draw stim images
-                    tidx = LOG.TrialList(TR,1);
-                    for imgidx = 1: length(STIM.Trials.trial(tidx).images)
+                    tidx = LOG.TrialList(TR, 1);
+                    for imgidx = 1:length(STIM.Trials.trial(tidx).images)
                         imagei = STIM.Trials.trial(tidx).images(imgidx);
+                        %To shift to next image in block, now quick fix,
+                        %improve later
+                        if nextpics>0
+                            imagei=imagei+1;
+                        end
                         ImageRect = CenterRectOnPoint(...
-                            [0 0 STIM.imgsz(1) STIM.imgsz(2)].*HARDWARE.Deg2Pix,...
-                            HARDWARE.Center(1)+STIM.Trials.trial(tidx).imgpos(imgidx,1)*HARDWARE.Deg2Pix,...
-                            HARDWARE.Center(2)+STIM.Trials.trial(tidx).imgpos(imgidx,2)*HARDWARE.Deg2Pix);
-
-                        % DEBUG: Print the image being drawn
-                        disp(['Drawing image: ' STIM.img(imagei).fn]);
-
-                        Screen('DrawTexture', HARDWARE.window,...
-                            STIM.img(imagei).tex,[],ImageRect)
+                            [0 0 STIM.imgsz(1) STIM.imgsz(2)].*HARDWARE.Deg2Pix, ...
+                            HARDWARE.Center(1)+STIM.Trials.trial(tidx).imgpos(imgidx, 1)*HARDWARE.Deg2Pix, ...
+                            HARDWARE.Center(2)+STIM.Trials.trial(tidx).imgpos(imgidx, 2)*HARDWARE.Deg2Pix);
+                
+                        % DEBUG: check image being drawn
+                        disp(['Drawing image (index): ' num2str(imagei) ' (' STIM.img(imagei).fn ')']);
+                        Screen('DrawTexture', HARDWARE.window, STIM.img(imagei).tex, [], ImageRect);
                     end
                 end
-
 
                 % FIX --
                 % Draw fix dot
@@ -703,22 +721,24 @@ end
 
             %% Feedback
             if ~QuitScript
-                StartFeedback=GetSecs;
+                StartFeedback = GetSecs;
                 LOG.Trial(TR).FeedbackOnset = vbl - LOG.ExpOnset;
 
-                % check if response is correct or not
-%                 imagei = STIM.Trials.trial(tidx).targ;
-%                 if LOG.Trial(TR).Resp == STIM.img(imagei).correctresp
+%                 check if response is correct or not
+                imagei = STIM.Trials.trial(tidx).targ;
+                if LOG.Trial(TR).Resp == STIM.img(imagei).correctresp
 %                     correct
-%                     CorrectResponse = true;
-%                     correct_responses_in_block = correct_responses_in_block + 1;
-%                 else
+                    CorrectResponse = true;
+                    correct_responses_in_block = correct_responses_in_block + 1;
+                else
 %                     wrong
-%                     CorrectResponse = false;
-%                 end
-%                 LOG.Trial(TR).RespCorr = CorrectResponse;
-%                 CorrResp = [CorrResp; CorrectResponse];
-%                 trials_in_block = trials_in_block + 1; % Increment trial counter
+                    CorrectResponse = false;
+                end
+                
+                LOG.Trial(TR).RespCorr = CorrectResponse;
+                CorrResp = [CorrResp; CorrectResponse];
+                trials_in_block = trials_in_block + 1; % Increment trial counter
+                
                 imagei = STIM.Trials.trial(tidx).targ;
                 if LOG.Trial(TR).Resp == STIM.img(imagei).correctresp
                     % correct
@@ -728,26 +748,40 @@ end
                     % wrong
                     CorrectResponse = false;
                 end
-                LOG.Trial(TR).RespCorr = CorrectResponse;
-                CorrResp = [CorrResp; CorrectResponse];
-                trials_in_block = trials_in_block + 1; % New: Increment trial counter
 
-                if trials_in_block >= 20 % Check if at least 20 trials
-                    accuracy = sum(CorrResp(end-19:end)) / 20; % Calculate accuracy over last 20 trials
+                if trials_in_block >= 5 % Check if at least 5 trials
+                    nextpics=nextpics+1;
+                    accuracy = sum(CorrResp(end-4:end)) / 5; % Calculate accuracy over last 5 trials
                     if accuracy >= 0.85
+                        % DEBUG: check accuracy
+                        disp('Switching images due to high accuracy.');
+                        disp(['Before switch: Relevant index: ', num2str(current_relevant_index), ', Redundant index: ', num2str(current_redundant_index)]);
                         correct_responses_in_block = 0; % Reset correct response counter
                         trials_in_block = 0; % Reset trial counter
                         current_relevant_index = current_relevant_index + 1;
                         current_redundant_index = current_redundant_index + 1;
-                        % Preload next images in the block
-                        if current_relevant_index <= relevant_block_index + 4 % Ensure within block limits
-                            relevant_image = STIM.img(current_relevant_index).fn;
-                            redundant_image = STIM.img(length(relevant_files) + current_redundant_index).fn;
-                            STIM.img(current_relevant_index).img = imread(fullfile(STIM.bitmapdir, relevant_image));
-                            STIM.img(current_relevant_index).tex = Screen('MakeTexture', HARDWARE.window, STIM.img(current_relevant_index).img);
-                            STIM.img(length(relevant_files) + current_redundant_index).img = imread(fullfile(STIM.bitmapdir, redundant_image));
-                            STIM.img(length(relevant_files) + current_redundant_index).tex = Screen('MakeTexture', HARDWARE.window, STIM.img(length(relevant_files) + current_redundant_index).img);
+                        
+                        % Ensure the indices do not exceed the bounds of the image array
+                        if current_relevant_index > length(relevant_files)
+                            current_relevant_index = length(relevant_files);
                         end
+                        if current_redundant_index > length(redundant_files) + length(relevant_files)
+                            current_redundant_index = length(redundant_files) + length(relevant_files);
+                        end
+
+                        disp(['After switch: Relevant index: ', num2str(current_relevant_index), ', Redundant index: ', num2str(current_redundant_index)]);
+
+                        % Preload the next images
+                        disp(['Switching to next relevant image: ', STIM.img(current_relevant_index).fn]);
+                        STIM.img(current_relevant_index).img = imread(fullfile(STIM.bitmapdir, STIM.img(current_relevant_index).fn));
+                        STIM.img(current_relevant_index).tex = Screen('MakeTexture', HARDWARE.window, STIM.img(current_relevant_index).img);
+                        
+                        disp(['Switching to next redundant image: ', STIM.img(current_redundant_index).fn]);
+                        STIM.img(current_redundant_index).img = imread(fullfile(STIM.bitmapdir, STIM.img(current_redundant_index).fn));
+                        STIM.img(current_redundant_index).tex = Screen('MakeTexture', HARDWARE.window, STIM.img(current_redundant_index).img);
+                    else
+                        % DEBUG: check accuracy
+                        disp('Accuracy not high enough, continuing with current images.');
                     end
                 end
 
@@ -844,6 +878,9 @@ end
             while GetSecs < StartITI + STIM.Times.ITI/1000
                 % wait
             end
+            % Add display statement to show completed trial
+            disp(['Completed trial: ', num2str(TR), ' with relevant index: ', num2str(current_relevant_index), ', redundant index: ', num2str(current_redundant_index)]);
+
         end
     end
 
