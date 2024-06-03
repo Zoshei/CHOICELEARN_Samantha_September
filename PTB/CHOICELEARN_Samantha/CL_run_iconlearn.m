@@ -187,7 +187,7 @@ StartFolder = pwd;
     %% Prepare stimuli --------------------------------------------------
 % Generate a trial list ---
 LOG.TrialList = [];
-nextpics=0;
+% nextpics=0;
 if STIM.Trials.Blocked
     for r = 1:STIM.Trials.BlockRepeats
         % block order
@@ -250,20 +250,9 @@ for i = 1:length(STIM.img)
     end
 end
 
-
-% Initialize variables to track correct responses and trials
-relevant_block_index = 1; % Start with the first block of relevant images
-redundant_block_index = length(relevant_files) + 1; % Start with the first block of redundant images
-correct_responses_in_block = 0; % Initialize the correct response counter
-trials_in_block = 0; % Initialize the trial counter
-
 disp(['Loading redundant image: ', STIM.img(current_redundant_index).fn]);
 STIM.img(current_redundant_index).img = imread(fullfile(STIM.bitmapdir, STIM.img(current_redundant_index).fn));
 STIM.img(current_redundant_index).tex = Screen('MakeTexture', HARDWARE.window, STIM.img(current_redundant_index).img);
-
-% % Set initial stimuli indices
-% current_relevant_index = relevant_block_index;
-% current_redundant_index = redundant_block_index;
 
 % Define the possible positions (in degrees visual angle, dva)
 num_images = 6;  % Total number of images per trial
@@ -588,7 +577,6 @@ end
 %                         ~isempty(STIM.Trials.trial(tidx).cue) && ...
 %                         ~QuitScript
                     
-                    
                     % Draw cue
                     tidx = LOG.TrialList(TR,1);
                     cidx = STIM.Trials.trial(tidx).cue;
@@ -603,6 +591,9 @@ end
                         HARDWARE.Center(1), HARDWARE.Center(2),...
                         HARDWARE.Center(1)+toH, HARDWARE.Center(2)+toV,...
                         cwidth);
+
+                    % DEBUG: check tidx voor trials in block
+                    disp(['tidx voor images', num2str(tidx)])
 %                 end
 
                 % IMAGES --
@@ -614,7 +605,10 @@ end
                         %To shift to next image in block, now quick fix,
                         %improve later
                         if nextpics>0
-                            imagei=imagei+1;
+                            imagei=imagei+nextpics;
+                            if nextpics==2
+                                test=1;
+                            end
                         end
                         ImageRect = CenterRectOnPoint(...
                             [0 0 STIM.imgsz(1) STIM.imgsz(2)].*HARDWARE.Deg2Pix, ...
@@ -748,6 +742,9 @@ end
                     % wrong
                     CorrectResponse = false;
                 end
+                
+                % DEBUG: check tidx voor trials in block
+                disp(['tidx voor trials_in_block', num2str(tidx)])
 
                 if trials_in_block >= 5 % Check if at least 5 trials
                     nextpics=nextpics+1;
