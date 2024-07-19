@@ -81,7 +81,7 @@ for block_num = 1:size(relevant_blocks, 1)
         STIM.img(idx).fn = fullfile('relevant', relevant_blocks{block_num, img_num});
         STIM.img(idx).type = 'relevant';
         STIM.img(idx).block = block_num;
-        STIM.img(idx).correctresp = mod(block_num, 2) + 1; % Alternate correct response: 1 for odd blocks, 2 for even blocks
+        STIM.img(idx).correctresp = 1; % define correct response as needed
     end
 end
 
@@ -92,7 +92,7 @@ for block_num = 1:size(redundant_blocks, 1)
         STIM.img(idx).fn = fullfile('redundant', redundant_blocks{block_num, img_num});
         STIM.img(idx).type = 'redundant';
         STIM.img(idx).block = block_num;
-        STIM.img(idx).correctresp = mod(block_num, 2) + 1; % Alternate correct response: 1 for odd blocks, 2 for even blocks
+        STIM.img(idx).correctresp = 1; % define correct response as needed
     
         % Add debug statement to verify correct response setting
         disp(['Setting correctresp for redundant image: ', STIM.img(idx).fn, ' Block: ', num2str(block_num), ' CorrectResp: ', num2str(STIM.img(idx).correctresp)]);
