@@ -723,40 +723,141 @@ for TR = 1:size(LOG.TrialList,1)
             vbl = Screen('Flip', HARDWARE.window);
         end
 
-
         %% Feedback
-        if ~QuitScript
-            StartFeedback = GetSecs;
-            LOG.Trial(TR).FeedbackOnset = vbl - LOG.ExpOnset;
+if ~QuitScript
+    StartFeedback = GetSecs;
+    LOG.Trial(TR).FeedbackOnset = vbl - LOG.ExpOnset;
 
-            %                 check if response is correct or not
-            imagei = STIM.Trials.trial(tidx).targ;
-            if LOG.Trial(TR).Resp == STIM.img(imagei).correctresp
-                %                     correct
-                CorrectResponse = true;
-                correct_responses_in_block = correct_responses_in_block + 1;
-            else
-                %                     wrong
-                CorrectResponse = false;
+    % Check if response is correct or not
+    imagei = STIM.Trials.trial(tidx).targ;
+    if LOG.Trial(TR).Resp == STIM.img(imagei).correctresp
+        % correct
+        CorrectResponse = true;
+        correct_responses_in_block = correct_responses_in_block + 1;
+    else
+        % wrong
+        CorrectResponse = false;
+    end
+    
+    % Debug statement to check correct response
+    disp(['Trial ', num2str(TR), ': Target Image Index: ', num2str(target_image_index), ...
+          ', Correct Response: ', num2str(correct_response), ', User Response: ', num2str(LOG.Trial(TR).Resp)]);
+    
+    LOG.Trial(TR).RespCorr = CorrectResponse;
+    CorrResp = [CorrResp; CorrectResponse];
+    trials_in_block = trials_in_block + 1; % Increment trial counter
+
+    % Display feedback text --
+    % Set text to be bigger
+    oldTextSize = Screen('TextSize', HARDWARE.window, STIM.Feedback.TextSize(1));
+    oldTextStyle = Screen('TextStyle', HARDWARE.window, 1); % bold
+    % Background
+    Screen('FillRect', HARDWARE.window, STIM.BackColor * HARDWARE.white);
+    if CorrectResponse
+        DrawFormattedText(HARDWARE.window, ...
+            ['Response: ' LOG.Trial(TR).Response '\n\n' ...
+            STIM.Feedback.TextCorrect], ...
+            'center', 'center', ...
+            STIM.Feedback.TextCorrectCol .* HARDWARE.white);
+    else
+        DrawFormattedText(HARDWARE.window, ...
+            ['Response: ' LOG.Trial(TR).Response '\n\n' ...
+            STIM.Feedback.TextWrong], ...
+            'center', 'center', ...
+            STIM.Feedback.TextWrongCol .* HARDWARE.white);
+    end
+    % Set text size back to small
+    Screen('TextSize', HARDWARE.window, oldTextSize);
+    Screen('TextStyle', HARDWARE.window, 0);
+    vbl = Screen('Flip', HARDWARE.window);
+
+    % Play sound --
+    if STIM.UseSoundFeedback
+        if CorrectResponse
+            sound(snd(1).wav, snd(1).fs); % snd(2) for different correct sound
+        else
+            sound(snd(3).wav, snd(3).fs);
+        end
+    end
+
+    % Check timing --
+    while GetSecs < StartFeedback + STIM.Times.Feedback / 1000 && ...
+            ~QuitScript
+        % wait
+    end
+
+    %% Performance Feedback
+    if STIM.Feedback.PerfShow
+        if TR >= STIM.Feedback.PerfOverLastNTrials && ...
+                mod(TR, STIM.Feedback.PerfShowEveryNTrials) == 0
+            % Calculate performance level
+            perfperc = 100 * (...
+                sum(CorrResp(end - (STIM.Feedback.PerfOverLastNTrials - 1):end)) ./ ...
+                STIM.Feedback.PerfOverLastNTrials);
+            % Which category
+            idx = find([STIM.Feedback.PerfLevels{:, 1}] >= perfperc, 1, 'first');
+            perfclass = STIM.Feedback.PerfLevels{idx, 2};
+
+            % Give as feedback
+            % Set text to be bigger
+            oldTextSize = Screen('TextSize', HARDWARE.window, STIM.Feedback.TextSize(1));
+            oldTextStyle = Screen('TextStyle', HARDWARE.window, 1); % bold
+            % Background
+            Screen('FillRect', HARDWARE.window, STIM.BackColor * HARDWARE.white);
+
+            DrawFormattedText(HARDWARE.window, ...
+                [num2str(floor(perfperc)) '% correct\n\nPsychophysics ' perfclass], ...
+                'center', 'center', ...
+                STIM.Feedback.NeutralCol .* HARDWARE.white);
+
+            % Set text size back to small
+            Screen('TextSize', HARDWARE.window, oldTextSize);
+            Screen('TextStyle', HARDWARE.window, 0);
+            vbl = Screen('Flip', HARDWARE.window);
+            StartPerfFB = GetSecs;
+
+            % Check timing --
+            while GetSecs < StartPerfFB + STIM.Times.Feedback / 1000 && ...
+                    ~QuitScript
+                % wait
             end
-
-            LOG.Trial(TR).RespCorr = CorrectResponse;
-            CorrResp = [CorrResp; CorrectResponse];
-            trials_in_block = trials_in_block + 1; % Increment trial counter
-
-            imagei = STIM.Trials.trial(tidx).targ;
-            if LOG.Trial(TR).Resp == STIM.img(imagei).correctresp
-                % correct
-                CorrectResponse = true;
-                %                     nPoints = STIM.img(imagei).points;
-            else
-                % wrong
-                CorrectResponse = false;
-            end
-
-            % DEBUG: check tidx voor trials in block
-            disp(['tidx voor trials_in_block', num2str(tidx)])
-
+        end
+    end
+end
+%         %% Feedback
+%         if ~QuitScript
+%             StartFeedback = GetSecs;
+%             LOG.Trial(TR).FeedbackOnset = vbl - LOG.ExpOnset;
+% 
+%             % check if response is correct or not
+%             imagei = STIM.Trials.trial(tidx).targ;
+%             if LOG.Trial(TR).Resp == STIM.img(imagei).correctresp
+%                 % correct
+%                 CorrectResponse = true;
+%                 correct_responses_in_block = correct_responses_in_block + 1;
+%             else
+%                 % wrong
+%                 CorrectResponse = false;
+%             end
+% 
+%             LOG.Trial(TR).RespCorr = CorrectResponse;
+%             CorrResp = [CorrResp; CorrectResponse];
+%             trials_in_block = trials_in_block + 1; % Increment trial counter
+% 
+%             imagei = STIM.Trials.trial(tidx).targ;
+%             if LOG.Trial(TR).Resp == STIM.img(imagei).correctresp
+%                 % correct
+%                 CorrectResponse = true;
+%                 % nPoints = STIM.img(imagei).points;
+%             else
+%                 % wrong
+%                 CorrectResponse = false;
+%             end
+% 
+%             % DEBUG: check tidx voor trials in block
+%             disp(['tidx voor trials_in_block', num2str(tidx)])
+% 
+% 
             if trials_in_block >= 5 % Check if at least 5 trials
                 nextpics=nextpics+1;
                 accuracy = sum(CorrResp(end-4:end)) / 5; % Calculate accuracy over last 5 trials
@@ -792,89 +893,91 @@ for TR = 1:size(LOG.TrialList,1)
                     disp('Accuracy not high enough, continuing with current images.');
                 end
             end
+% 
+%             % display feedback text --
+%             % set text to be bigger
+%             oldTextSize=Screen('TextSize', HARDWARE.window,...
+%                 STIM.Feedback.TextSize(1));
+%             oldTextStyle=Screen('TextStyle',HARDWARE.window,1); %bold
+%             % background
+%             Screen('FillRect',HARDWARE.window,...
+%                 STIM.BackColor*HARDWARE.white);
+%             if CorrectResponse
+%                 DrawFormattedText(HARDWARE.window,...
+%                     ['Response: ' LOG.Trial(TR).Response '\n\n'...
+%                     STIM.Feedback.TextCorrect],...
+%                     'center','center',...
+%                     STIM.Feedback.TextCorrectCol.*HARDWARE.white);
+%             else
+%                 DrawFormattedText(HARDWARE.window,...
+%                     ['Response: ' LOG.Trial(TR).Response '\n\n'...
+%                     STIM.Feedback.TextWrong],...
+%                     'center','center',...
+%                     STIM.Feedback.TextWrongCol.*HARDWARE.white);
+%             end
+%             
+%             % Set text size back to small
+%             Screen('TextSize', HARDWARE.window,oldTextSize);
+%             Screen('TextStyle',HARDWARE.window,0);
+%             vbl = Screen('Flip', HARDWARE.window);
+% 
+%             % play sound --
+%             if STIM.UseSoundFeedback
+%                 if CorrectResponse
+%                     sound(snd(1).wav,snd(1).fs);%snd(2) for different correct sound
+%                 else
+%                     sound(snd(3).wav,snd(3).fs);
+%                 end
+%             end
+% 
+%             % check timing --
+%             while GetSecs < StartFeedback + STIM.Times.Feedback/1000 && ...
+%                     ~QuitScript
+%                 % wait
+%             end
+% 
+% 
+%             %% PERFORMANCE FEEDBACK
+%             if STIM.Feedback.PerfShow
+%                 if TR >= STIM.Feedback.PerfOverLastNTrials && ...
+%                         mod(TR,STIM.Feedback.PerfShowEveryNTrials) == 0
+%                     % calculate performance level
+%                     perfperc = 100*(...
+%                         sum(CorrResp(end-(STIM.Feedback.PerfOverLastNTrials-1):end))./...
+%                         STIM.Feedback.PerfOverLastNTrials);
+%                     % which category
+%                     idx = find([STIM.Feedback.PerfLevels{:,1}]>=perfperc,1,'first');
+%                     perfclass = STIM.Feedback.PerfLevels{idx,2};
+% 
+%                     % give as feedback
+%                     % set text to be bigger
+%                     oldTextSize=Screen('TextSize', HARDWARE.window,...
+%                         STIM.Feedback.TextSize(1));
+%                     oldTextStyle=Screen('TextStyle',HARDWARE.window,1); %bold
+%                     % background
+%                     Screen('FillRect',HARDWARE.window,...
+%                         STIM.BackColor*HARDWARE.white);
+% 
+%                     DrawFormattedText(HARDWARE.window,...
+%                         [num2str(floor(perfperc)) '% correct\n\nPsychophysics ' perfclass],...
+%                         'center','center',...
+%                         STIM.Feedback.NeutralCol.*HARDWARE.white);
+% 
+%                     % Set text size back to small
+%                     Screen('TextSize', HARDWARE.window,oldTextSize);
+%                     Screen('TextStyle',HARDWARE.window,0);
+%                     vbl = Screen('Flip', HARDWARE.window);
+%                     StartPerfFB = GetSecs;
+% 
+%                     % check timing --
+%                     while GetSecs < StartPerfFB + STIM.Times.Feedback/1000 && ...
+%                             ~QuitScript
+%                         % wait
+%                     end
+%                 end
+%             end
+%         end
 
-            % display feedback text --
-            % set text to be bigger
-            oldTextSize=Screen('TextSize', HARDWARE.window,...
-                STIM.Feedback.TextSize(1));
-            oldTextStyle=Screen('TextStyle',HARDWARE.window,1); %bold
-            % background
-            Screen('FillRect',HARDWARE.window,...
-                STIM.BackColor*HARDWARE.white);
-            if CorrectResponse
-                DrawFormattedText(HARDWARE.window,...
-                    ['Response: ' LOG.Trial(TR).Response '\n\n'...
-                    STIM.Feedback.TextCorrect],...
-                    'center','center',...
-                    STIM.Feedback.TextCorrectCol.*HARDWARE.white);
-            else
-                DrawFormattedText(HARDWARE.window,...
-                    ['Response: ' LOG.Trial(TR).Response '\n\n'...
-                    STIM.Feedback.TextWrong],...
-                    'center','center',...
-                    STIM.Feedback.TextWrongCol.*HARDWARE.white);
-            end
-            % Set text size back to small
-            Screen('TextSize', HARDWARE.window,oldTextSize);
-            Screen('TextStyle',HARDWARE.window,0);
-            vbl = Screen('Flip', HARDWARE.window);
-
-            % play sound --
-            if STIM.UseSoundFeedback
-                if CorrectResponse
-                    sound(snd(1).wav,snd(1).fs);%snd(2) for different correct sound
-                else
-                    sound(snd(3).wav,snd(3).fs);
-                end
-            end
-
-            % check timing --
-            while GetSecs < StartFeedback + STIM.Times.Feedback/1000 && ...
-                    ~QuitScript
-                % wait
-            end
-
-
-            %% PERFORMANCE FEEDBACK
-            if STIM.Feedback.PerfShow
-                if TR >= STIM.Feedback.PerfOverLastNTrials && ...
-                        mod(TR,STIM.Feedback.PerfShowEveryNTrials) == 0
-                    % calculate performance level
-                    perfperc = 100*(...
-                        sum(CorrResp(end-(STIM.Feedback.PerfOverLastNTrials-1):end))./...
-                        STIM.Feedback.PerfOverLastNTrials);
-                    % which category
-                    idx = find([STIM.Feedback.PerfLevels{:,1}]>=perfperc,1,'first');
-                    perfclass = STIM.Feedback.PerfLevels{idx,2};
-
-                    % give as feedback
-                    % set text to be bigger
-                    oldTextSize=Screen('TextSize', HARDWARE.window,...
-                        STIM.Feedback.TextSize(1));
-                    oldTextStyle=Screen('TextStyle',HARDWARE.window,1); %bold
-                    % background
-                    Screen('FillRect',HARDWARE.window,...
-                        STIM.BackColor*HARDWARE.white);
-
-                    DrawFormattedText(HARDWARE.window,...
-                        [num2str(floor(perfperc)) '% correct\n\nPsychophysics ' perfclass],...
-                        'center','center',...
-                        STIM.Feedback.NeutralCol.*HARDWARE.white);
-
-                    % Set text size back to small
-                    Screen('TextSize', HARDWARE.window,oldTextSize);
-                    Screen('TextStyle',HARDWARE.window,0);
-                    vbl = Screen('Flip', HARDWARE.window);
-                    StartPerfFB = GetSecs;
-
-                    % check timing --
-                    while GetSecs < StartPerfFB + STIM.Times.Feedback/1000 && ...
-                            ~QuitScript
-                        % wait
-                    end
-                end
-            end
-        end
         %% ITI
         StartITI=GetSecs;
 
