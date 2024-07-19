@@ -573,31 +573,26 @@ for TR = 1:size(LOG.TrialList,1)
 
             % CUE --
 
-            % CUE --
             % Draw cue
-            tidx = LOG.TrialList(TR, 1);
+            tidx = LOG.TrialList(TR,1);
             cidx = STIM.Trials.trial(tidx).cue;
-            cwidth = STIM.cue(cidx).sz(1) * HARDWARE.Deg2Pix;
-            
+            cwidth = STIM.cue(cidx).sz(1).*HARDWARE.Deg2Pix;
+
             if vbl - LOG.ExpOnset >= LOG.Trial(TR).StimPhaseOnset + ...
-                    STIM.Times.Cue(1) / 1000 && ...
+                    STIM.Times.Cue(1)/1000 && ...
                     ~isempty(STIM.Trials.trial(tidx).cue) && ...
                     ~QuitScript
-            
-                % Find the position of the first image in the current trial
-                first_image_pos = STIM.Trials.trial(tidx).imgpos(1, :);
-            
-                % Convert the position to screen coordinates
-                first_image_screen_x = HARDWARE.Center(1) + first_image_pos(1) * HARDWARE.Deg2Pix;
-                first_image_screen_y = HARDWARE.Center(2) + first_image_pos(2) * HARDWARE.Deg2Pix;
-            
-                % Draw the line from the center to the position of the first image
-                Screen('DrawLine', HARDWARE.window, ...
-                    STIM.cue(cidx).color .* HARDWARE.white, ...
-                    HARDWARE.Center(1), HARDWARE.Center(2), ...
-                    first_image_screen_x, first_image_screen_y, ...
-                    cwidth);
             end
+
+            veclength = STIM.cue(cidx).sz(2)*HARDWARE.Deg2Pix;
+            toH = round(STIM.cue(cidx).dir(1)*veclength);
+            toV = round(STIM.cue(cidx).dir(2)*veclength);
+
+            Screen('DrawLine',HARDWARE.window,...
+                STIM.cue(cidx).color.*HARDWARE.white,...
+                HARDWARE.Center(1), HARDWARE.Center(2),...
+                HARDWARE.Center(1)+toH, HARDWARE.Center(2)+toV,...
+                cwidth);
 
             % DEBUG: check tidx voor trials in block
             disp(['tidx voor images', num2str(tidx)])
