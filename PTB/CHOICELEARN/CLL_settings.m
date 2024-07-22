@@ -19,12 +19,12 @@ HARDWARE.EyelinkCalibrate = true; % boolean
 HARDWARE.MeasureFixEveryNthTrials = 20; % Only works WITH eyelink
 % To be sure about eye-tracking accuracy we can use repeated calibration
 
-HARDWARE.LogLabel = 'ExpType'; % change this!
+HARDWARE.LogLabel = 'LatentLearn'; % change this!
 % will be used to generate subfolders for dfferent log types
 
 %% USING A WRAPPER RUN-FILE =============================================
 WRAPPER.GetSubjectFromWrapper = true;
-% when set to true, get the subject nfor from the wrapper script as WLOG
+% when set to true, get the subject info from the wrapper script as WLOG
 
 %% BACKGROUND & FIXATION ================================================
 % Background color
@@ -39,6 +39,32 @@ STIM.Fix.Color = [0 0 0]; % [R G B] range: 0-1
 % Instruction text
 STIM.WelcomeText = ['Choose the 1 or 0 key for the cued image\n\n'...
                     '>> Press any key to start <<'];
+
+%% IMAGE-SERIES INFO ====================================================
+STIM.morphs(1).class =  {'0008', '0966'}; % Hen - Wineglass
+STIM.morphs(2).class =  {'0074', '0985'}; % Spider - Daisy
+STIM.morphs(3).class =  {'0096', '0637'}; % Toucan - Mailbox
+STIM.morphs(4).class =  {'0104', '0604'}; % Kangaroo - Hourglass
+STIM.morphs(5).class =  {'0113', '0407'}; % Snail - Ambulance
+STIM.morphs(6).class =  {'0143', '0437'}; % Bird - Lighthouse
+STIM.morphs(7).class =  {'0162', '0510'}; % Beagle - Container ship
+STIM.morphs(8).class =  {'0281', '0817'}; % Cat - Car
+STIM.morphs(9).class =  {'0294', '0577'}; % Bear - Gong
+STIM.morphs(10).class = {'0309', '0448'}; % Bee - Birdhouse
+STIM.morphs(11).class = {'0323', '0938'}; % Butterfly - Cauliflower
+STIM.morphs(12).class = {'0363', '0821'}; % Armadillo - Bridge
+STIM.morphs(13).class = {'0153', '0484'}; % White dog - Sailboat
+STIM.morphs(14).class = {'0076', '0666'}; % Tarantula - Mortar and pestle
+STIM.morphs(15).class = {'0001', '0470'}; % Goldfish - Candle
+STIM.morphs(16).class = {'0024', '0493'}; % Owl - Closet
+STIM.morphs(17).class = {'0039', '0852'}; % Iguana - Tennis ball
+STIM.morphs(18).class = {'0064', '0955'}; % Snake – Jackfruit 
+STIM.morphs(19).class = {'0086', '0579'}; % Bird 2 – Piano
+STIM.morphs(20).class = {'0040', '0417'}; % Chameleon – Air balloon
+STIM.morphs(21).class = {'0992', '0555'}; % Mushroom – Fire brigade
+STIM.morphs(22).class = {'0108', '0504'}; % Anemone – Mug
+STIM.morphs(23).class = {'0187', '0967'}; % Brown dog – Coffee 
+STIM.morphs(24).class = {'0112', '0900'}; % Shell - Water tower
 
 %% STIMULUS INFO ========================================================
 % NB! For positions, note that shifting rightwards and downwards are 
@@ -57,7 +83,21 @@ STIM.Key2 = '0)';
 % image size
 STIM.imgsz = [3 3];
 
-% relevant ----
+
+%% STIMULUS TRIAL TYPES =================================================
+% image positions in polar coordinates
+STIM.Template.imgpos.r = 5;
+STIM.Template.imgpos.angle = 0:60:359; % 6 positions on a circle
+
+STIM.TrialType(1).relevant_idx = 1; % morphseries index
+STIM.TrialType(1).redundant_idx = 2; % morphseries index
+STIM.TrialType(1).distractor_idx = [3,4,5,6]; % morphseries index
+STIM.TrialType(1).correctresponse = 1;
+STIM.TrialType(1).relevant_pos = 2; % position index
+STIM.TrialType(1).redundant_pos = 5; % position index
+
+
+%% relevant ----
 STIM.img(1).fn = '1.bmp';
 STIM.img(1).correctresp = 1; %1/2/undefined
 STIM.img(1).points = 10;
@@ -74,7 +114,7 @@ STIM.img(4).fn = '4.bmp';
 STIM.img(4).correctresp = 2; 
 STIM.img(4).points = 0;
 
-% cued distractor ----
+%% cued distractor ----
 STIM.img(5).fn = '5.bmp';
 STIM.img(5).correctresp = 'undefined';
 STIM.img(5).points = 10;
@@ -91,7 +131,7 @@ STIM.img(8).fn = '8.bmp';
 STIM.img(8).correctresp = 'undefined';
 STIM.img(8).points = 0;
 
-% redundant ----
+%% redundant ----
 STIM.img(9).fn = '9.bmp';
 STIM.img(9).correctresp = 1; 
 STIM.img(9).points = 10;
@@ -108,7 +148,7 @@ STIM.img(12).fn = '12.bmp';
 STIM.img(12).correctresp = 2; 
 STIM.img(12).points = 0;
 
-% uncued distractor ----
+%% uncued distractor ----
 STIM.img(13).fn = '13.bmp';
 STIM.img(13).correctresp = 'undefined';
 STIM.img(13).points = 10;

@@ -222,7 +222,7 @@ try
     end
 
     % load images that are needed ---
-    % we may need to do this in a more sensisble way to avoid slow-downs
+    % we may need to do this in a more sensible way to avoid slow-downs
     % or memory issues. However, try to do it the simple way first as the
     % number of unique images may not be prohibitively high in this
     % experiment
@@ -773,7 +773,8 @@ try
 
     %% Save the data
     [~,~] = mkdir(fullfile(StartFolder,DataFolder,HARDWARE.LogLabel));
-    save(fullfile(StartFolder,DataFolder,HARDWARE.LogLabel,LOG.FileName),'HARDWARE','STIM','LOG');
+    save(fullfile(StartFolder,DataFolder,HARDWARE.LogLabel,LOG.FileName),...
+        'HARDWARE','STIM','LOG');
 
     %% Restore screen
     if HARDWARE.DoGammaCorrection

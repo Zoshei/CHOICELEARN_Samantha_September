@@ -19,7 +19,7 @@ WLOG.DateTimeStr = datestr(datetime('now'), 'yyyymmdd_HHMM');
 
 %% Run the experiments --------------------------------------------------
 % Run the experiment with a settings file
-CL_run('settingsA',0,WLOG)
+CLL_run('CLL_settings',0,WLOG)
 
 % =======================================
 % do something in between (or not)
@@ -27,4 +27,4 @@ CL_run('settingsA',0,WLOG)
 % =======================================
 
 % Run the experiment with another settings file
-CL_run('settingsB',0,WLOG)
+%CL_run('settingsB',0,WLOG)
