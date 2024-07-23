@@ -83,7 +83,6 @@ STIM.Key2 = '0)';
 % image size
 STIM.imgsz = [3 3];
 
-
 %% STIMULUS TRIAL TYPES =================================================
 % image positions in polar coordinates
 STIM.Template.imgpos.r = 5;
@@ -91,10 +90,31 @@ STIM.Template.imgpos.angle = 0:60:359; % 6 positions on a circle
 
 STIM.TrialType(1).relevant_idx = 1; % morphseries index
 STIM.TrialType(1).redundant_idx = 2; % morphseries index
-STIM.TrialType(1).distractor_idx = [3,4,5,6]; % morphseries index
+STIM.TrialType(1).distractor_idx = 3:6; % morphseries index
 STIM.TrialType(1).correctresponse = 1;
 STIM.TrialType(1).relevant_pos = 2; % position index
 STIM.TrialType(1).redundant_pos = 5; % position index
+
+STIM.TrialType(2).relevant_idx = 7; % morphseries index
+STIM.TrialType(2).redundant_idx = 8; % morphseries index
+STIM.TrialType(2).distractor_idx = 9:12; % morphseries index
+STIM.TrialType(2).correctresponse = 2;
+STIM.TrialType(2).relevant_pos = 2; % position index
+STIM.TrialType(2).redundant_pos = 5; % position index
+
+STIM.TrialType(3).relevant_idx = 13; % morphseries index
+STIM.TrialType(3).redundant_idx = 14; % morphseries index
+STIM.TrialType(3).distractor_idx = 15:18; % morphseries index
+STIM.TrialType(3).correctresponse = 1;
+STIM.TrialType(3).relevant_pos = 3; % position index
+STIM.TrialType(3).redundant_pos = 6; % position index
+
+STIM.TrialType(4).relevant_idx = 19; % morphseries index
+STIM.TrialType(4).redundant_idx = 20; % morphseries index
+STIM.TrialType(4).distractor_idx = 21:24; % morphseries index
+STIM.TrialType(4).correctresponse = 2;
+STIM.TrialType(4).relevant_pos = 3; % position index
+STIM.TrialType(4).redundant_pos = 6; % position index
 
 
 %% relevant ----
