@@ -1,4 +1,4 @@
-function CL_run(SettingsFile,Debug,WLOG)
+function CLL_run(SettingsFile,Debug,WLOG)
 
 %% PTB3 script for ======================================================
 % CHOICE_LEARNING experiment
@@ -34,7 +34,7 @@ DebugRect = [0 0 1024 768];
 run(fullfile(RunPath,SettingsFile));
 
 %% Create data folder if it doesn't exist yet and go there --------------
-DataFolder = 'CL_data';
+DataFolder = 'CLL_data';
 StartFolder = pwd;
 [~,~] = mkdir(fullfile(StartFolder,DataFolder));
 
@@ -186,40 +186,12 @@ try
     %% Prepare stimuli --------------------------------------------------
     % generate a trial list ---
     LOG.TrialList = [];
-    if STIM.Trials.Blocked
-        for r = 1:STIM.Trials.BlockRepeats
-            % block order
-            if STIM.Trials.RandomBlocks
-                blockorder = randperm(size(STIM.Trials.TrialsInBlocks,1));
-            else
-                blockorder  = 1:size(STIM.Trials.TrialsInBlocks,1);
-            end
-
-            for b = blockorder
-                if STIM.Trials.RandomTrials
-                    trialorder = randperm(size(STIM.Trials.TrialsInBlocks,2));
-                else
-                    trialorder = 1:size(STIM.Trials.TrialsInBlocks,2);
-                end
-                LOG.TrialList = [LOG.TrialList;...
-                    STIM.Trials.TrialsInBlocks(b,trialorder)' ...
-                    ones(length(trialorder),1).*b ...
-                    ones(length(trialorder),1).*r];
-            end
-        end
+    if STIM.Trials.RandomTrials
+        trialorder = randperm(size(STIM.Trials.TrialsInExp,1));
     else
-        for r=1:STIM.Trials.TrialsRepeats
-            if STIM.Trials.RandomTrials
-                trialorder = randperm(size(STIM.Trials.TrialsInExp,2));
-            else
-                trialorder = 1:size(STIM.Trials.TrialsInExp,2);
-            end
-            LOG.TrialList = [LOG.TrialList;...
-                STIM.Trials.TrialsInExp(1,trialorder)' ...
-                ones(length(trialorder),1).*1 ...
-                ones(length(trialorder),1).*r];
-        end
+        trialorder = 1:size(STIM.Trials.TrialsInExp,1);
     end
+    LOG.TrialList = STIM.Trials.TrialsInExp(trialorder);
 
     % load images that are needed ---
     % we may need to do this in a more sensible way to avoid slow-downs
@@ -227,23 +199,36 @@ try
     % number of unique images may not be prohibitively high in this
     % experiment
 
-    uniquetrials = unique(LOG.TrialList(:,1));
+    uniquetrials = unique(LOG.TrialList);
     allimages = [];
     for ut = uniquetrials'
-        allimages = [allimages, STIM.Trials.trial(ut).images]; %#ok<*AGROW>
+        allimages = [allimages, ...
+            STIM.TrialsType(ut).relevant_idx ...
+            STIM.TrialsType(ut).redundant_idx ...
+            STIM.TrialsType(ut).distractor_idx]; %#ok<*AGROW>
     end
     uniqueimages = unique(allimages);
 
     % pre-allocate variable for all possible images
-    for i = 1: length(STIM.img)
-        STIM.img(i).img = [];
-        STIM.img(i).tex = [];
+    for i = uniqueimages
+        for j = 1:length(STIM.morphimgs)
+            STIM.img(i,j).img = [];
+            STIM.img(i,j).tex = [];
+        end
     end
 
     % load the ones we need
     for ui = uniqueimages
-        STIM.img(ui).img = imread(fullfile(STIM.bitmapdir,STIM.img(ui).fn));
-        STIM.img(ui).tex = Screen('MakeTexture',HARDWARE.window,STIM.img(ui).img);
+        for j = STIM.morphimgs
+            serieslabel = ['c' num2str(STIM.morphs(ui).class{1},'%04.f') ...
+                '-' num2str(STIM.morphs(ui).class{2},'%04.f')];
+            STIM.img(ui,j+1).img = imread(fullfile(STIM.imagedir,serieslabel,...
+                [serieslabel '_i' num2str(j,'%02.f')]));
+            STIM.img(ui,j+1).tex = Screen('MakeTexture',HARDWARE.window,...
+                STIM.img(ui,j+1).img);
+            STIM.dyn(ui).perf = [];
+            STIM.dyn(ui).currentimg = 1;
+        end
     end
 
     % load the sounds we need
@@ -254,6 +239,27 @@ try
         STIM.Feedback.SoundCorrect{2}));
     [snd(3).wav,snd(3).fs] = audioread(fullfile(curpath,STIM.snddir,...
         STIM.Feedback.SoundWrong));
+
+    % convert image locations to rects and the cue lines to coordinates
+    for p = 1:length(STIM.Template.imgpos.angle)
+        % img rect
+        [X,Y] = pol2cart(...
+            deg2rad(STIM.Template.imgpos.angle(p)),...
+            STIM.Template.imgpos.r.*HARDWARE.Deg2Pix);
+        STIM.imgszpix = round(STIM.imgsz.*HARDWARE.Deg2Pix);
+        rect = [0 0 STIM.imgszpix STIM.imgszpix];
+        STIM.img(p).rect = CenterRectOnPoint(rect,X,Y); 
+        % cue points
+        STIM.cue.szpix = round(STIM.cue.sz.*HARDWARE.Deg2Pix);
+        [x1,y1]=pol2cart(...
+            deg2rad(STIM.Template.imgpos.angle(p)),...
+            STIM.cue.pos*HARDWARE.Deg2Pix);
+        [x2,y2]=pol2cart(...
+            deg2rad(STIM.Template.imgpos.angle(p)),...
+            STIM.cue.pos*HARDWARE.Deg2Pix+STIM.cue.szpix(2));
+        STIM.img(p).cuexy = [x1,y1,x2,y2];
+        STIM.img(p).cuewidth = STIM.cue.szpix(1);
+    end
 
     % Create filename ---
     LOG.FileName = [LOG.Subject '_' LOG.DateTimeStr];
@@ -267,19 +273,6 @@ try
         2*STIM.Fix.WindowRadius*HARDWARE.Deg2Pix ...
         2*STIM.Fix.WindowRadius*HARDWARE.Deg2Pix], ...
         HARDWARE.Center(1),HARDWARE.Center(2));
-
-    % Initiate the side-cues
-    for c = 1:length(STIM.cue)
-        x1 = round(HARDWARE.Center(1) + ...
-            (STIM.cue(c).pos(1)-STIM.cue(c).sz(1)/2)*HARDWARE.Deg2Pix);
-        x2 = round(HARDWARE.Center(1) + ...
-            (STIM.cue(c).pos(1)+STIM.cue(c).sz(1)/2)*HARDWARE.Deg2Pix);
-        y1 = round(HARDWARE.Center(2) + ...
-            (STIM.cue(c).pos(2)-STIM.cue(c).sz(2)/2)*HARDWARE.Deg2Pix);
-        y2 = round(HARDWARE.Center(2) + ...
-            (STIM.cue(c).pos(2)+STIM.cue(c).sz(2)/2)*HARDWARE.Deg2Pix);
-        STIM.cue(c).rect = [x1,y1,x2,y2];
-    end
 
     %% Run the Experiment
     %% Calibrate EYELINK ------------------------------------------------
@@ -315,7 +308,22 @@ try
     end
 
     %% Run the trials
+    LOG.TrialList
+    
+    
+    
+    
+    
+    
     CorrResp = [];
+
+
+
+
+
+
+
+
     for TR = 1:size(LOG.TrialList,1)
         if QuitScript
             break;
