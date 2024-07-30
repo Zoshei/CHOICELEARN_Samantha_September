@@ -19,7 +19,7 @@ HARDWARE.EyelinkCalibrate = true; % boolean
 HARDWARE.MeasureFixEveryNthTrials = 20; % Only works WITH eyelink
 % To be sure about eye-tracking accuracy we can use repeated calibration
 
-HARDWARE.LogLabel = 'LatentLearn'; % change this!
+HARDWARE.LogLabel = 'LatentLearnRedundant'; % change this!
 % will be used to generate subfolders for dfferent log types
 
 %% USING A WRAPPER RUN-FILE =============================================
@@ -66,7 +66,7 @@ STIM.morphs(22).class = {'0108', '0504'}; % Anemone – Mug
 STIM.morphs(23).class = {'0187', '0967'}; % Brown dog – Coffee 
 STIM.morphs(24).class = {'0112', '0900'}; % Shell - Water tower
 
-STIM.morphimgs = 10;
+STIM.morphimgs = 0:10;
 
 %% STIMULUS INFO ========================================================
 % NB! For positions, note that shifting rightwards and downwards are 
@@ -87,46 +87,40 @@ STIM.imgsz = [3 3];
 
 %% STIMULUS TRIAL TYPES =================================================
 % image positions in polar coordinates
-STIM.Template.imgpos.r = 5;
-STIM.Template.imgpos.angle = 0:60:359; % 6 positions on a circle
+STIM.Template.imgpos.r = 0;
+STIM.Template.imgpos.angle = 0; % 1 positions on a circle
 % start at 3 o'clock go ccw
 
 STIM.TrialType(1).relevant_idx = 1; % morphseries index
 STIM.TrialType(1).redundant_idx = 2; % morphseries index
 STIM.TrialType(1).correctresponse = 1;
 STIM.TrialType(1).relevant_pos = 2; % position index
-STIM.TrialType(1).redundant_pos = 1; % position index
+STIM.TrialType(1).redundant_pos = 5; % position index
 STIM.TrialType(1).distractor_pos = [1,3,4,6];
 
 STIM.TrialType(2).relevant_idx = 3; % morphseries index
 STIM.TrialType(2).redundant_idx = 4; % morphseries index
 STIM.TrialType(2).correctresponse = 2;
 STIM.TrialType(2).relevant_pos = 2; % position index
-STIM.TrialType(2).redundant_pos = 1; % position index
+STIM.TrialType(2).redundant_pos = 5; % position index
 STIM.TrialType(2).distractor_pos = [1,3,4,6];
 
 STIM.TrialType(3).relevant_idx = 5; % morphseries index
 STIM.TrialType(3).redundant_idx = 6; % morphseries index
 STIM.TrialType(3).correctresponse = 1;
 STIM.TrialType(3).relevant_pos = 3; % position index
-STIM.TrialType(3).redundant_pos = 1; % position index
+STIM.TrialType(3).redundant_pos = 6; % position index
 STIM.TrialType(3).distractor_pos = [1,3,4,5];
 
 STIM.TrialType(4).relevant_idx = 7; % morphseries index
 STIM.TrialType(4).redundant_idx = 8; % morphseries index
 STIM.TrialType(4).correctresponse = 2;
 STIM.TrialType(4).relevant_pos = 3; % position index
-STIM.TrialType(4).redundant_pos = 1; % position index
+STIM.TrialType(4).redundant_pos = 6; % position index
 STIM.TrialType(4).distractor_pos = [1,2,4,5];
 
 STIM.Template.distractor_idx = 9:24;
 
-
-% %% CUE INFO =============================================================
-% % line pointing left or right
-% STIM.cue.color = [1 0 0]; % RGB
-% STIM.cue.sz = [0.05 0.5]; % [width length] dva
-% STIM.cue.pos = 0.5; % dva from center of fixation point
 
 %% EXPERIMENT STRUCTURE =================================================
 % in each trial there should alway be:
@@ -152,17 +146,17 @@ STIM.RequireContFix = false;
 STIM.Trials.RandomTrials = true; % also applies to non-blocked
 STIM.Trials.InterMixed = true; % mix morphseries
 STIM.Trials.TrialsInExp = 1:4; % trial types
-STIM.Trials.PerformanceThreshold = [100 100]; 
+STIM.Trials.PerformanceThreshold = [5 5]; 
 % [x y] x out of the last y trials for this trialtype have to be correct 
 % to go to the next step 
-STIM.Trials.MaxNumTrials = 20; 
+STIM.Trials.MaxNumTrials = 1000; 
 % the exp will run untill all series have transfered performance to the 
 % other end of the morph series or for this number of trials 
 
 %% FEEDBACK =============================================================
 % Feedback?
-STIM.PerformanceFeedback = false;
-STIM.UseSoundFeedback = false;
+STIM.PerformanceFeedback = true;
+STIM.UseSoundFeedback = true;
 
 % where are the sounds 
 STIM.snddir = 'snd';

@@ -254,20 +254,20 @@ try
         STIM.imgszpix = round(STIM.imgsz.*HARDWARE.Deg2Pix);
         rect = [0 0 STIM.imgszpix];
         STIM.pos(p).rect = CenterRectOnPoint(rect,X,Y); 
-        % cue points
-        STIM.cue.szpix = round(STIM.cue.sz.*HARDWARE.Deg2Pix);
-        [x1,y1]=pol2cart(...
-            deg2rad(STIM.Template.imgpos.angle(p)),...
-            STIM.cue.pos*HARDWARE.Deg2Pix);
-        [x2,y2]=pol2cart(...
-            deg2rad(STIM.Template.imgpos.angle(p)),...
-            STIM.cue.pos*HARDWARE.Deg2Pix+STIM.cue.szpix(2));
-        x1 = HARDWARE.Center(1)+x1;
-        y1 = HARDWARE.Center(2)-y1;
-        x2 = HARDWARE.Center(1)+x2;
-        y2 = HARDWARE.Center(2)-y2;
-        STIM.pos(p).cuexy = [x1,y1,x2,y2];
-        STIM.pos(p).cuewidth = STIM.cue.szpix(1);
+        % % cue points
+        % STIM.cue.szpix = round(STIM.cue.sz.*HARDWARE.Deg2Pix);
+        % [x1,y1]=pol2cart(...
+        %     deg2rad(STIM.Template.imgpos.angle(p)),...
+        %     STIM.cue.pos*HARDWARE.Deg2Pix);
+        % [x2,y2]=pol2cart(...
+        %     deg2rad(STIM.Template.imgpos.angle(p)),...
+        %     STIM.cue.pos*HARDWARE.Deg2Pix+STIM.cue.szpix(2));
+        % x1 = HARDWARE.Center(1)+x1;
+        % y1 = HARDWARE.Center(2)-y1;
+        % x2 = HARDWARE.Center(1)+x2;
+        % y2 = HARDWARE.Center(2)-y2;
+        % STIM.pos(p).cuexy = [x1,y1,x2,y2];
+        % STIM.pos(p).cuewidth = STIM.cue.szpix(1);
     end
 
     % Create filename ---
@@ -517,31 +517,31 @@ try
                     Screen('FillRect',HARDWARE.window,...
                         STIM.BackColor*HARDWARE.white);
 
-                    % CUE --
-                    if vbl - LOG.ExpOnset >= LOG.Trial(trialsdone+1).StimPhaseOnset + ...
-                            STIM.Times.Cue(1)/1000 && ...
-                            ~QuitScript
-
-                        % Draw cue
-                        p = STIM.TrialType(tidx).relevant_pos;
-                        Screen('DrawLine',HARDWARE.window,...
-                            STIM.cue.color.*HARDWARE.white,...
-                            STIM.pos(p).cuexy(1), STIM.pos(p).cuexy(2),...
-                            STIM.pos(p).cuexy(3), STIM.pos(p).cuexy(4),...
-                            STIM.pos(p).cuewidth);
-                    end
+                    % % CUE --
+                    % if vbl - LOG.ExpOnset >= LOG.Trial(trialsdone+1).StimPhaseOnset + ...
+                    %         STIM.Times.Cue(1)/1000 && ...
+                    %         ~QuitScript
+                    % 
+                    %     % Draw cue
+                    %     p = STIM.TrialType(tidx).relevant_pos;
+                    %     Screen('DrawLine',HARDWARE.window,...
+                    %         STIM.cue.color.*HARDWARE.white,...
+                    %         STIM.pos(p).cuexy(1), STIM.pos(p).cuexy(2),...
+                    %         STIM.pos(p).cuexy(3), STIM.pos(p).cuexy(4),...
+                    %         STIM.pos(p).cuewidth);
+                    % end
 
                     % IMAGES --
                     if vbl - LOG.ExpOnset >= LOG.Trial(trialsdone+1).StimPhaseOnset + ...
                             STIM.Times.Stim(1)/1000 && ~QuitScript
                         % Draw stim images
 
-                        % relevant
-                        idx = STIM.TrialType(tidx).relevant_idx;
-                        p = STIM.TrialType(tidx).relevant_pos;
-                        Screen('DrawTexture', HARDWARE.window,...
-                            STIM.img(idx,STIM.dyn(tidx).currentimg).tex,...
-                            [],STIM.pos(p).rect)
+                        % % relevant
+                        % idx = STIM.TrialType(tidx).relevant_idx;
+                        % p = STIM.TrialType(tidx).relevant_pos;
+                        % Screen('DrawTexture', HARDWARE.window,...
+                        %     STIM.img(idx,STIM.dyn(tidx).currentimg).tex,...
+                        %     [],STIM.pos(p).rect)
 
                         % redundant
                         idx = STIM.TrialType(tidx).redundant_idx;
@@ -550,13 +550,13 @@ try
                             STIM.img(idx,STIM.dyn(tidx).currentimg).tex,...
                             [],STIM.pos(p).rect)
 
-                        % other
-                        for d=1:length(didx)
-                            p = STIM.TrialType(tidx).distractor_pos(d);
-                            Screen('DrawTexture', HARDWARE.window,...
-                                STIM.img(didx(d),STIM.dyn(tidx).currentimg).tex,...
-                                [],STIM.pos(p).rect);
-                        end
+                        % % other
+                        % for d=1:length(didx)
+                        %     p = STIM.TrialType(tidx).distractor_pos(d);
+                        %     Screen('DrawTexture', HARDWARE.window,...
+                        %         STIM.img(didx(d),STIM.dyn(tidx).currentimg).tex,...
+                        %         [],STIM.pos(p).rect);
+                        % end
                         
                     end
 
