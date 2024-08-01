@@ -179,3 +179,7 @@ STIM.Feedback.SoundCorrect = {'correct0.wav','correct.wav'}; %{low high}
 STIM.Feedback.TextWrong = 'WRONG';
 STIM.Feedback.TextWrongCol = [0.2 0 0];
 STIM.Feedback.SoundWrong = 'wrong.wav';
+
+%% Saving the data ======================================================
+% here you can remove the actual images from the log to save space
+STIM.RemoveImagesFromLog = true;
