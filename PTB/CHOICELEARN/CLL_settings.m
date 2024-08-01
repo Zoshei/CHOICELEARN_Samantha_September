@@ -66,7 +66,7 @@ STIM.morphs(22).class = {'0108', '0504'}; % Anemone – Mug
 STIM.morphs(23).class = {'0187', '0967'}; % Brown dog – Coffee 
 STIM.morphs(24).class = {'0112', '0900'}; % Shell - Water tower
 
-STIM.morphimgs = 10;
+STIM.morphimgs = 0:10;
 
 %% STIMULUS INFO ========================================================
 % NB! For positions, note that shifting rightwards and downwards are 
@@ -95,28 +95,28 @@ STIM.TrialType(1).relevant_idx = 1; % morphseries index
 STIM.TrialType(1).redundant_idx = 2; % morphseries index
 STIM.TrialType(1).correctresponse = 1;
 STIM.TrialType(1).relevant_pos = 2; % position index
-STIM.TrialType(1).redundant_pos = 1; % position index
+STIM.TrialType(1).redundant_pos = 5; % position index
 STIM.TrialType(1).distractor_pos = [1,3,4,6];
 
 STIM.TrialType(2).relevant_idx = 3; % morphseries index
 STIM.TrialType(2).redundant_idx = 4; % morphseries index
 STIM.TrialType(2).correctresponse = 2;
 STIM.TrialType(2).relevant_pos = 2; % position index
-STIM.TrialType(2).redundant_pos = 1; % position index
+STIM.TrialType(2).redundant_pos = 5; % position index
 STIM.TrialType(2).distractor_pos = [1,3,4,6];
 
 STIM.TrialType(3).relevant_idx = 5; % morphseries index
 STIM.TrialType(3).redundant_idx = 6; % morphseries index
 STIM.TrialType(3).correctresponse = 1;
 STIM.TrialType(3).relevant_pos = 3; % position index
-STIM.TrialType(3).redundant_pos = 1; % position index
-STIM.TrialType(3).distractor_pos = [1,3,4,5];
+STIM.TrialType(3).redundant_pos = 6; % position index
+STIM.TrialType(3).distractor_pos = [1,2,4,5];
 
 STIM.TrialType(4).relevant_idx = 7; % morphseries index
 STIM.TrialType(4).redundant_idx = 8; % morphseries index
 STIM.TrialType(4).correctresponse = 2;
 STIM.TrialType(4).relevant_pos = 3; % position index
-STIM.TrialType(4).redundant_pos = 1; % position index
+STIM.TrialType(4).redundant_pos = 6; % position index
 STIM.TrialType(4).distractor_pos = [1,2,4,5];
 
 STIM.Template.distractor_idx = 9:24;
@@ -124,9 +124,9 @@ STIM.Template.distractor_idx = 9:24;
 
 % %% CUE INFO =============================================================
 % % line pointing left or right
-% STIM.cue.color = [1 0 0]; % RGB
-% STIM.cue.sz = [0.05 0.5]; % [width length] dva
-% STIM.cue.pos = 0.5; % dva from center of fixation point
+STIM.cue.color = [1 0 0]; % RGB
+STIM.cue.sz = [0.05 0.5]; % [width length] dva
+STIM.cue.pos = 0.5; % dva from center of fixation point
 
 %% EXPERIMENT STRUCTURE =================================================
 % in each trial there should alway be:

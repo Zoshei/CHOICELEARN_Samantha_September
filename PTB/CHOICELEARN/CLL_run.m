@@ -20,7 +20,7 @@ if nargin < 3
     if nargin < 2
         Debug = false;
         if nargin < 1
-            SettingsFile = 'CL_settings';
+            SettingsFile = 'CLL_settings';
         end
     end
 end
@@ -70,7 +70,7 @@ try
                 LOG.DateTimeStr = datestr(datetime('now'), 'yyyymmdd_HHMM');
             end
         end
-        
+
     end
 
     if HARDWARE.EyelinkConnected %#ok<*USENS>
@@ -253,7 +253,7 @@ try
         Y = HARDWARE.Center(2)-Y;
         STIM.imgszpix = round(STIM.imgsz.*HARDWARE.Deg2Pix);
         rect = [0 0 STIM.imgszpix];
-        STIM.pos(p).rect = CenterRectOnPoint(rect,X,Y); 
+        STIM.pos(p).rect = CenterRectOnPoint(rect,X,Y);
         % cue points
         STIM.cue.szpix = round(STIM.cue.sz.*HARDWARE.Deg2Pix);
         [x1,y1]=pol2cart(...
@@ -324,7 +324,7 @@ try
         CurrTrialList = LOG.TrialList(1);
         CurrTrialListIdx = 1;
     end
-    
+
     while trialsdone <= STIM.Trials.MaxNumTrials && ~AllSeriesDone
         for TR = 1:length(CurrTrialList)
             if QuitScript
@@ -335,7 +335,7 @@ try
             tidx = CurrTrialList(TR);
             LOG.Trial(trialsdone+1).TrialType = tidx;
             LOG.Trial(trialsdone+1).currimg = STIM.dyn(tidx).currentimg;
-            
+
             % Trial-start to Eyelink
             if HARDWARE.EyelinkConnected
                 pause(0.1) % send some samples to edf file
@@ -557,15 +557,12 @@ try
                                 STIM.img(didx(d),STIM.dyn(tidx).currentimg).tex,...
                                 [],STIM.pos(p).rect);
                         end
-                        
                     end
 
                     % FIX --
                     % Draw fix dot
                     Screen('FillOval', HARDWARE.window,...
                         STIM.Fix.Color.*HARDWARE.white,FixRect);
-
-                    
 
                     % GET RESPONSE --
                     % Check for key-presses
@@ -731,7 +728,7 @@ try
                     % wait
                 end
             end
-        
+
             % performance for this series
             resp = STIM.dyn(tidx).resp{STIM.dyn(tidx).currentimg};
             respinv = fliplr(resp);
@@ -767,17 +764,17 @@ try
             if ~isempty(remidx)
                 CurrTrialList(remidx) = [];
             end
-             if isempty(CurrTrialList)
+            if isempty(CurrTrialList)
                 AllSeriesDone = true;
-             end
+            end
         end
-        
+
         if STIM.Trials.RandomTrials && ~AllSeriesDone
             CurrTrialList = CurrTrialList(randperm(length(CurrTrialList)));
         end
 
     end
-    
+
     %% WRAP UP
     if ~QuitScript
         vbl = Screen('Flip', HARDWARE.window);
