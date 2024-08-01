@@ -20,7 +20,7 @@ if nargin < 3
     if nargin < 2
         Debug = false;
         if nargin < 1
-            SettingsFile = 'CL_settings';
+            SettingsFile = 'CLL_settings_red';
         end
     end
 end
@@ -215,6 +215,7 @@ try
     end
 
     % load the ones we need
+    fprintf('Loading images to textures...');
     for ui = uniqueimages
         for j = STIM.morphimgs
             serieslabel = ['c' num2str(STIM.morphs(ui).class{1},'%04.f') ...
@@ -225,6 +226,7 @@ try
                 STIM.img(ui,j+1).img);
         end
     end
+    fprintf('DONE\n');
 
     for tt = STIM.Trials.TrialsInExp
         for j = 1:length(STIM.morphimgs)
@@ -325,7 +327,7 @@ try
         CurrTrialListIdx = 1;
     end
     
-    while trialsdone <= STIM.Trials.MaxNumTrials && ~AllSeriesDone
+    while trialsdone <= STIM.Trials.MaxNumTrials && ~AllSeriesDone && ~QuitScript
         for TR = 1:length(CurrTrialList)
             if QuitScript
                 break;
@@ -799,9 +801,17 @@ try
             'Exiting...','center','center',STIM.TextIntensity);
         vbl = Screen('Flip', HARDWARE.window);
     end
-    pause(.25)
+    pause(1)
 
     %% Save the data
+    % remove the images from the log to save space
+-   if STIM.RemoveImagesFromLog
+-       for i = 1: size(STIM.img,1)
+-           for j = 1:size(STIM.img,2)
+-               STIM.img(i,j).img = [];
+-           end
+-       end
+-   end
     [~,~] = mkdir(fullfile(StartFolder,DataFolder,HARDWARE.LogLabel));
     save(fullfile(StartFolder,DataFolder,HARDWARE.LogLabel,LOG.FileName),...
         'HARDWARE','STIM','LOG');

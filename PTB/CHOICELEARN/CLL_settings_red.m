@@ -110,7 +110,7 @@ STIM.TrialType(3).redundant_idx = 6; % morphseries index
 STIM.TrialType(3).correctresponse = 1;
 STIM.TrialType(3).relevant_pos = 3; % position index
 STIM.TrialType(3).redundant_pos = 6; % position index
-STIM.TrialType(3).distractor_pos = [1,3,4,5];
+STIM.TrialType(3).distractor_pos = [1,2,4,5];
 
 STIM.TrialType(4).relevant_idx = 7; % morphseries index
 STIM.TrialType(4).redundant_idx = 8; % morphseries index
@@ -173,3 +173,7 @@ STIM.Feedback.SoundCorrect = {'correct0.wav','correct.wav'}; %{low high}
 STIM.Feedback.TextWrong = 'WRONG';
 STIM.Feedback.TextWrongCol = [0.2 0 0];
 STIM.Feedback.SoundWrong = 'wrong.wav';
+
+-%% Saving the data ======================================================
+-% here you can remove the actual images from the log to save space
+-STIM.RemoveImagesFromLog = true;
