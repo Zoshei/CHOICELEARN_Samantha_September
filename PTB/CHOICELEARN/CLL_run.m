@@ -732,6 +732,9 @@ try
             end
 
             % performance for this series
+            % SW: PerformanceThreshold is defined as [required_correct_responses, trial_window]
+            STIM.Trials.PerformanceThreshold = [2, 3]; % Requires 2 correct responses out of the last 3 trials
+
             resp = STIM.dyn(tidx).resp{STIM.dyn(tidx).currentimg};
             respinv = fliplr(resp);
             if size(resp,2) >= STIM.Trials.PerformanceThreshold(2) && ...
