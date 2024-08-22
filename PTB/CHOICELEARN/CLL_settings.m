@@ -155,7 +155,7 @@ STIM.Trials.TrialsInExp = 1:4; % trial types
 STIM.Trials.PerformanceThreshold = [100 100]; 
 % [x y] x out of the last y trials for this trialtype have to be correct 
 % to go to the next step 
-STIM.Trials.MaxNumTrials = 40; 
+STIM.Trials.MaxNumTrials = 120; 
 % the exp will run untill all series have transfered performance to the 
 % other end of the morph series or for this number of trials 
 
