@@ -129,7 +129,7 @@ STIM.cue.sz = [0.05 0.5]; % [width length] dva
 STIM.cue.pos = 0.5; % dva from center of fixation point
 
 %% EXPERIMENT STRUCTURE =================================================
-% in each trial there should alway be:
+% in each trial there should always be:
 % cue side: 1 image with response association, one without  
 % uncued side: 1 image with same response association, one without 
 % all should have same reward
@@ -155,7 +155,7 @@ STIM.Trials.TrialsInExp = 1:4; % trial types
 STIM.Trials.PerformanceThreshold = [100 100]; 
 % [x y] x out of the last y trials for this trialtype have to be correct 
 % to go to the next step 
-STIM.Trials.MaxNumTrials = 120; 
+STIM.Trials.MaxNumTrials = 250; 
 % the exp will run untill all series have transfered performance to the 
 % other end of the morph series or for this number of trials 
 

@@ -156,7 +156,7 @@ STIM.Trials.MaxNumTrials = 1000;
 %% FEEDBACK =============================================================
 % Feedback?
 STIM.PerformanceFeedback = true;
-STIM.UseSoundFeedback = true;
+STIM.UseSoundFeedback = false;
 
 % where are the sounds 
 STIM.snddir = 'snd';
@@ -174,6 +174,6 @@ STIM.Feedback.TextWrong = 'WRONG';
 STIM.Feedback.TextWrongCol = [0.2 0 0];
 STIM.Feedback.SoundWrong = 'wrong.wav';
 
--%% Saving the data ======================================================
--% here you can remove the actual images from the log to save space
--STIM.RemoveImagesFromLog = true;
+%% Saving the data ======================================================
+% here you can remove the actual images from the log to save space
+STIM.RemoveImagesFromLog = true;

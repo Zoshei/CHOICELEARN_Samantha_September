@@ -6,7 +6,8 @@ function CLL_run(SettingsFile,Debug,WLOG)
 
 % Response: choose one of two keys (learn cue-response)
 
-% In short:
+% In
+% short:
 % - A fixation dot is presented
 % - A number of stimuli are presented with an attention cue
 % - In the reponse phase, subjects say A or B
@@ -733,7 +734,7 @@ try
 
             % performance for this series
             % SW: PerformanceThreshold is defined as [required_correct_responses, trial_window]
-            STIM.Trials.PerformanceThreshold = [2, 3]; % Requires 2 correct responses out of the last 3 trials
+            STIM.Trials.PerformanceThreshold = [4, 5]; % Requires 2 correct responses out of the last 3 trials
 
             resp = STIM.dyn(tidx).resp{STIM.dyn(tidx).currentimg};
             respinv = fliplr(resp);

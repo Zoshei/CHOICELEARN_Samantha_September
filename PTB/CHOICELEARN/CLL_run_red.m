@@ -38,7 +38,7 @@ StartFolder = pwd;
 [~,~] = mkdir(fullfile(StartFolder,DataFolder));
 
 %% Run the experiment ---------------------------------------------------
-try
+% try
     %% Initialize & Calculate Stimuli -----------------------------------
     if Debug
         LOG.Subject = 'TEST';
@@ -538,12 +538,12 @@ try
                             STIM.Times.Stim(1)/1000 && ~QuitScript
                         % Draw stim images
 
-                        % % relevant
-                        % idx = STIM.TrialType(tidx).relevant_idx;
-                        % p = STIM.TrialType(tidx).relevant_pos;
-                        % Screen('DrawTexture', HARDWARE.window,...
-                        %     STIM.img(idx,STIM.dyn(tidx).currentimg).tex,...
-                        %     [],STIM.pos(p).rect)
+                        % relevant
+%                         idx = STIM.TrialType(tidx).relevant_idx;
+%                         p = STIM.TrialType(tidx).relevant_pos;
+%                         Screen('DrawTexture', HARDWARE.window,...
+%                             STIM.img(idx,STIM.dyn(tidx).currentimg).tex,...
+%                             [],STIM.pos(p).rect)
 
                         % redundant
                         idx = STIM.TrialType(tidx).redundant_idx;
@@ -561,7 +561,6 @@ try
                         % end
                         
                     end
-
                     % FIX --
                     % Draw fix dot
                     Screen('FillOval', HARDWARE.window,...
@@ -805,13 +804,13 @@ try
 
     %% Save the data
     % remove the images from the log to save space
--   if STIM.RemoveImagesFromLog
--       for i = 1: size(STIM.img,1)
--           for j = 1:size(STIM.img,2)
--               STIM.img(i,j).img = [];
--           end
--       end
--   end
+   if STIM.RemoveImagesFromLog
+       for i = 1: size(STIM.img,1)
+           for j = 1:size(STIM.img,2)
+               STIM.img(i,j).img = [];
+           end
+       end
+   end
     [~,~] = mkdir(fullfile(StartFolder,DataFolder,HARDWARE.LogLabel));
     save(fullfile(StartFolder,DataFolder,HARDWARE.LogLabel,LOG.FileName),...
         'HARDWARE','STIM','LOG');
@@ -839,18 +838,18 @@ try
         Eyelink('ShutDown');
         cd(fullfile(StartFolder,DataFolder));
     end
-catch e %#ok<CTCH> %if there is an error the script will go here
-    fprintf(1,'There was an error! The message was:\n%s',e.message);
-    if HARDWARE.DoGammaCorrection
-        Screen('LoadNormalizedGammaTable',HARDWARE.ScrNr,OLD_Gamtable);
-    end
-    Screen('CloseAll');ListenChar();ShowCursor;
-    %psychrethrow(psychlasterror);
-    %% Close up Eyelink
-    if HARDWARE.EyelinkConnected
-        Eyelink('Stoprecording');
-        Eyelink('Closefile');
-        Eyelink('ShutDown');
-    end
-end
+% catch e %#ok<CTCH> %if there is an error the script will go here
+%     fprintf(1,'There was an error! The message was:\n%s',e.message);
+%     if HARDWARE.DoGammaCorrection
+%         Screen('LoadNormalizedGammaTable',HARDWARE.ScrNr,OLD_Gamtable);
+%     end
+%     Screen('CloseAll');ListenChar();ShowCursor;
+%     psychrethrow(psychlasterror);
+%     %% Close up Eyelink
+%     if HARDWARE.EyelinkConnected
+%         Eyelink('Stoprecording');
+%         Eyelink('Closefile');
+%         Eyelink('ShutDown');
+%     end
+% end
 cd(StartFolder); % back to where we started
