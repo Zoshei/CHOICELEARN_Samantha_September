@@ -108,19 +108,33 @@ STIM.TrialType(2).distractor_pos = [1,3,4,6];
 STIM.TrialType(3).relevant_idx = 5; % morphseries index
 STIM.TrialType(3).redundant_idx = 6; % morphseries index
 STIM.TrialType(3).correctresponse = 1;
-STIM.TrialType(3).relevant_pos = 3; % position index
-STIM.TrialType(3).redundant_pos = 6; % position index
-STIM.TrialType(3).distractor_pos = [1,2,4,5];
+STIM.TrialType(3).relevant_pos = 2; % position index
+STIM.TrialType(3).redundant_pos = 5; % position index
+STIM.TrialType(3).distractor_pos = [1,3,4,6];
 
 STIM.TrialType(4).relevant_idx = 7; % morphseries index
 STIM.TrialType(4).redundant_idx = 8; % morphseries index
 STIM.TrialType(4).correctresponse = 2;
-STIM.TrialType(4).relevant_pos = 3; % position index
-STIM.TrialType(4).redundant_pos = 6; % position index
-STIM.TrialType(4).distractor_pos = [1,2,4,5];
+STIM.TrialType(4).relevant_pos = 2; % position index
+STIM.TrialType(4).redundant_pos = 5; % position index
+STIM.TrialType(4).distractor_pos = [1,3,4,6];
 
 STIM.Template.distractor_idx = 9:24;
 
+%% SW: Define Distractor Pools for Each Position =========================================
+% Specify which distractor images are linked to each position
+
+% Pool of distractors for position 1
+STIM.DistractorPool.Pos1 = [9, 10, 11, 12];
+
+% Pool of distractors for position 3
+STIM.DistractorPool.Pos3 = [13, 14, 15, 16];
+
+% Pool of distractors for position 4
+STIM.DistractorPool.Pos4 = [17, 18, 19, 20];
+
+% Pool of distractors for position 6
+STIM.DistractorPool.Pos6 = [21, 22, 23, 24];
 
 % %% CUE INFO =============================================================
 % % line pointing left or right

@@ -339,6 +339,7 @@ try
             LOG.Trial(trialsdone+1).TrialType = tidx;
             LOG.Trial(trialsdone+1).currimg = STIM.dyn(tidx).currentimg;
 
+
             % Trial-start to Eyelink
             if HARDWARE.EyelinkConnected
                 pause(0.1) % send some samples to edf file
@@ -503,11 +504,61 @@ try
                 MaxDur = max([STIM.Times.Cue(2) STIM.Times.Stim(2)]);
                 ResponseGiven = false;
 
-                % prep distractors
-                didx = STIM.Template.distractor_idx;
-                didx = didx(randperm(length(didx)));
-                didx = didx(1:length(STIM.TrialType(tidx).distractor_pos));
-                LOG.Trial(trialsdone+1).distractor_idx = didx;
+%                 % prep distractors
+%                 didx = STIM.Template.distractor_idx;
+%                 didx = didx(randperm(length(didx)));
+%                 didx = didx(1:length(STIM.TrialType(tidx).distractor_pos));
+%                 LOG.Trial(trialsdone+1).distractor_idx = didx;
+
+                %% SW: Prep distractors
+                % Initialize the last used distractor for all positions in the trial
+                last_used_distractors = NaN(1, max(STIM.TrialType(tidx).distractor_pos));
+                
+                % Randomly select distractor images for each predefined distractor position
+                selected_distractors = [];
+                for p = STIM.TrialType(tidx).distractor_pos  % Iterate over the predefined distractor positions
+                    current_pool = [];
+                    
+                    % Select the correct pool based on the current position
+                    switch p
+                        case 1
+                            current_pool = STIM.DistractorPool.Pos1;
+                        case 3
+                            current_pool = STIM.DistractorPool.Pos3;
+                        case 4
+                            current_pool = STIM.DistractorPool.Pos4;
+                        case 6
+                            current_pool = STIM.DistractorPool.Pos6;
+                        % Add more cases if you have more distractor positions defined
+                    end
+                    
+                    % Select a random image, ensuring it's not the same as the last used
+                    valid_selection = false;
+                    while ~valid_selection
+                        selected_image = current_pool(randperm(length(current_pool), 1));  % Randomly pick an image
+                        
+                        % Check if the last used distractor for this position is the same
+                        if ~isnan(last_used_distractors(p)) && selected_image == last_used_distractors(p)
+                            valid_selection = false;
+                        else
+                            valid_selection = true;
+                        end
+                    end
+                    
+                    % Store the selected image in the list of distractors for this trial
+                    selected_distractors = [selected_distractors selected_image];
+                    
+                    % Update the last used distractor for this position
+                    last_used_distractors(p) = selected_image;
+                end
+                
+                % Assign the selected distractors to the current trial
+                LOG.Trial(trialsdone+1).distractor_idx = selected_distractors;
+
+                % Assign selected_distractors to didx for backward compatibility
+                didx = selected_distractors;
+                
+                %%% End SW
 
                 FirstFlipDone = false;
                 CueOnLog = false;
