@@ -551,13 +551,15 @@ try
                     % Update the last used distractor for this position
                     last_used_distractors(p) = selected_image;
                 end
-                
-                % Assign the selected distractors to the current trial
-                LOG.Trial(trialsdone+1).distractor_idx = selected_distractors;
 
                 % Assign selected_distractors to didx for backward compatibility
                 didx = selected_distractors;
-                
+
+                % Store relevant, redundant, and distractor image indices in the log
+                LOG.Trial(trialsdone+1).relevant_idx = STIM.TrialType(tidx).relevant_idx;
+                LOG.Trial(trialsdone+1).redundant_idx = STIM.TrialType(tidx).redundant_idx;
+                LOG.Trial(trialsdone+1).distractor_idx = selected_distractors;
+                                
                 %%% End SW
 
                 FirstFlipDone = false;
