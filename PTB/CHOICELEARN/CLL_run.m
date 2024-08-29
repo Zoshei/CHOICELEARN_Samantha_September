@@ -511,49 +511,56 @@ try
 %                 LOG.Trial(trialsdone+1).distractor_idx = didx;
 
                 %% SW: Prep distractors
-                % Initialize the last used distractor for all positions in the trial
-                last_used_distractors = NaN(1, max(STIM.TrialType(tidx).distractor_pos));
+                % Number of past distractors to avoid
+                history_length = 3;
                 
-                % Randomly select distractor images for each predefined distractor position
-                selected_distractors = [];
-                for p = STIM.TrialType(tidx).distractor_pos  % Iterate over the predefined distractor positions
-                    current_pool = [];
-                    
-                    % Select the correct pool based on the current position
-                    switch p
-                        case 1
-                            current_pool = STIM.DistractorPool.Pos1;
-                        case 3
-                            current_pool = STIM.DistractorPool.Pos3;
-                        case 4
-                            current_pool = STIM.DistractorPool.Pos4;
-                        case 6
-                            current_pool = STIM.DistractorPool.Pos6;
-                        % Add more cases if you have more distractor positions defined
-                    end
-                    
-                    % Select a random image, ensuring it's not the same as the last used
-                    valid_selection = false;
-                    while ~valid_selection
-                        selected_image = current_pool(randperm(length(current_pool), 1));  % Randomly pick an image
-                        
-                        % Check if the last used distractor for this position is the same
-                        if ~isnan(last_used_distractors(p)) && selected_image == last_used_distractors(p)
-                            valid_selection = false;
-                        else
-                            valid_selection = true;
-                        end
-                    end
-                    
-                    % Store the selected image in the list of distractors for this trial
-                    selected_distractors = [selected_distractors selected_image];
-                    
-                    % Update the last used distractor for this position
-                    last_used_distractors(p) = selected_image;
+                % Initialize history for each distractor position
+                distractor_history = cell(1, max(STIM.TrialType(1).distractor_pos));
+                for p = STIM.TrialType(1).distractor_pos
+                    distractor_history{p} = NaN(1, history_length);  % Initialize with NaN
                 end
+                
+                % Trial loop
+                for trialNum = 1:STIM.Trials.MaxNumTrials  % Use your actual number of trials
+                    selected_distractors = [];
+                    for p = STIM.TrialType(tidx).distractor_pos  % Iterate over the predefined distractor positions
+                        current_pool = [];
+                        
+                        % Select the correct pool based on the current position
+                        switch p
+                            case 1
+                                current_pool = STIM.DistractorPool.Pos1;
+                            case 3
+                                current_pool = STIM.DistractorPool.Pos3;
+                            case 4
+                                current_pool = STIM.DistractorPool.Pos4;
+                            case 6
+                                current_pool = STIM.DistractorPool.Pos6;
+                            % Add more cases if you have more distractor positions defined
+                        end
+                        
+                        % Remove recently used distractors from the pool
+                        pool = setdiff(current_pool, distractor_history{p});
+                        
+                        % If the pool is empty (i.e., all images are in history), reset the history
+                        if isempty(pool)
+                            pool = current_pool;
+                            distractor_history{p} = NaN(1, history_length);  % Reset history
+                        end
+                        
+                        % Randomly select a distractor from the remaining pool
+                        selected_image = pool(randperm(length(pool), 1));  % Randomly pick an image
+                        
+                        % Store the selected image in the list of distractors for this trial
+                        selected_distractors = [selected_distractors selected_image];
+                        
+                        % Update the history for this position
+                        distractor_history{p} = [selected_image distractor_history{p}(1:end-1)];
+                    end
 
                 % Assign selected_distractors to didx for backward compatibility
                 didx = selected_distractors;
+                end
 
                 % Store relevant, redundant, and distractor image indices in the log
                 LOG.Trial(trialsdone+1).relevant_idx = STIM.TrialType(tidx).relevant_idx;
