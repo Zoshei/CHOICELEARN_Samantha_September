@@ -12,7 +12,6 @@ function CLL_run(SettingsFile,Debug,WLOG)
 % - In the reponse phase, subjects say A or B
 % - Feedback can be provided on whether this was correct
 %==========================================================================
-global STIM
 clc; QuitScript = false;
 
 if nargin < 3
@@ -202,7 +201,8 @@ try
     for ut = uniquetrials'
         allimages = [allimages, ...
             STIM.TrialType(ut).relevant_idx ...
-            STIM.TrialType(ut).redundant_idx ]; %#ok<*AGROW>
+            STIM.TrialType(ut).redundant_idx ...
+             STIM.TrialType(ut).distractor_idx ]; %#ok<*AGROW>
     end
     uniqueimages = unique(allimages);
 
@@ -231,6 +231,7 @@ try
     for tt = STIM.Trials.TrialsInExp
         for j = 1:length(STIM.morphimgs)
             STIM.dyn(tt).resp{j} = [];
+            STIM.dyn(tt).rt{j} = [];
         end
         STIM.dyn(tt).done = false;
         STIM.dyn(tt).currentimg = 1;
@@ -503,10 +504,17 @@ try
                 ResponseGiven = false;
 
                 % prep distractors
-                didx = STIM.Template.distractor_idx;
-                didx = didx(randperm(length(didx)));
-                didx = didx(1:length(STIM.TrialType(tidx).distractor_pos));
-                LOG.Trial(trialsdone+1).distractor_idx = didx;
+                % for each position pick a random distractor
+                dpos = []; didx =[];
+                for dp = 1:length(STIM.Template.distractor)
+                    dpos = [dpos STIM.Template.distractor(dp).pos]; % positions
+                    % get random distractor
+                    RD = randperm(length(STIM.Template.distractor(dp).idx));
+                    didx = [didx; RD(1)];
+                    % log
+                    LOG.Trial(trialsdone+1).distractor_idx = didx;
+                    LOG.Trial(trialsdone+1).distractor_pos = dpos;
+                end
 
                 FirstFlipDone = false;
                 CueOnLog = false;
@@ -554,7 +562,7 @@ try
 
                         % other
                         for d=1:length(didx)
-                            p = STIM.TrialType(tidx).distractor_pos(d);
+                            p = dpos(d);
                             Screen('DrawTexture', HARDWARE.window,...
                                 STIM.img(didx(d),STIM.dyn(tidx).currentimg).tex,...
                                 [],STIM.pos(p).rect);
@@ -577,6 +585,8 @@ try
                         elseif keyCode(Key1)
                             %fprintf('Key 1 pressed\n')
                             j = STIM.dyn(tidx).currentimg;
+                            RT = LOG.Trial(trialsdone+1).StimPhaseOnset-secs;
+                            STIM.dyn(tidx).rt{j} = [STIM.dyn(tidx).rt{j} RT];
                             if STIM.TrialType(tidx).correctresponse == 1
                                 STIM.dyn(tidx).resp{j} = [STIM.dyn(tidx).resp{j} 1];
                                 CorrectResponse = true;
@@ -590,6 +600,8 @@ try
                         elseif keyCode(Key2)
                             %fprintf('Key 0 pressed\n')
                             j = STIM.dyn(tidx).currentimg;
+                            RT = LOG.Trial(trialsdone+1).StimPhaseOnset-secs;
+                            STIM.dyn(tidx).rt{j} = [STIM.dyn(tidx).rt{j} RT];
                             if STIM.TrialType(tidx).correctresponse == 2
                                 STIM.dyn(tidx).resp{j} = [STIM.dyn(tidx).resp{j} 1];
                                 CorrectResponse = true;

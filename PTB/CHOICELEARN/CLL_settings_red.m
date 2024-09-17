@@ -121,7 +121,6 @@ STIM.TrialType(4).distractor_pos = [1,2,4,5];
 
 STIM.Template.distractor_idx = 9:24;
 
-
 %% EXPERIMENT STRUCTURE =================================================
 % in each trial there should alway be:
 % cue side: 1 image with response association, one without  
@@ -174,6 +173,6 @@ STIM.Feedback.TextWrong = 'WRONG';
 STIM.Feedback.TextWrongCol = [0.2 0 0];
 STIM.Feedback.SoundWrong = 'wrong.wav';
 
--%% Saving the data ======================================================
--% here you can remove the actual images from the log to save space
--STIM.RemoveImagesFromLog = true;
+%% Saving the data ======================================================
+% here you can remove the actual images from the log to save space
+STIM.RemoveImagesFromLog = true;

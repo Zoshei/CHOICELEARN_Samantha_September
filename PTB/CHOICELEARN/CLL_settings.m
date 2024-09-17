@@ -89,38 +89,40 @@ STIM.imgsz = [3 3];
 % image positions in polar coordinates
 STIM.Template.imgpos.r = 5;
 STIM.Template.imgpos.angle = 0:60:359; % 6 positions on a circle
+STIM.Template.distractor_idx = 9:24 ;
+STIM.Template.distractor(1).pos = 1;
+STIM.Template.distractor(1).idx = 9:12;
+STIM.Template.distractor(2).pos = 3;
+STIM.Template.distractor(2).idx = 13:16;
+STIM.Template.distractor(3).pos = 4;
+STIM.Template.distractor(3).idx = 17:20;
+STIM.Template.distractor(4).pos = 6;
+STIM.Template.distractor(4).idx = 21:24;
 % start at 3 o'clock go ccw
 
 STIM.TrialType(1).relevant_idx = 1; % morphseries index
-STIM.TrialType(1).redundant_idx = 2; % morphseries index
-STIM.TrialType(1).correctresponse = 1;
 STIM.TrialType(1).relevant_pos = 2; % position index
+STIM.TrialType(1).redundant_idx = 2; % morphseries index
 STIM.TrialType(1).redundant_pos = 5; % position index
-STIM.TrialType(1).distractor_pos = [1,3,4,6];
+STIM.TrialType(1).correctresponse = 1;
 
 STIM.TrialType(2).relevant_idx = 3; % morphseries index
-STIM.TrialType(2).redundant_idx = 4; % morphseries index
-STIM.TrialType(2).correctresponse = 2;
 STIM.TrialType(2).relevant_pos = 2; % position index
+STIM.TrialType(2).redundant_idx = 4; % morphseries index
 STIM.TrialType(2).redundant_pos = 5; % position index
-STIM.TrialType(2).distractor_pos = [1,3,4,6];
+STIM.TrialType(2).correctresponse = 2;
 
 STIM.TrialType(3).relevant_idx = 5; % morphseries index
+STIM.TrialType(3).relevant_pos = 2; % position index
 STIM.TrialType(3).redundant_idx = 6; % morphseries index
-STIM.TrialType(3).correctresponse = 1;
-STIM.TrialType(3).relevant_pos = 3; % position index
-STIM.TrialType(3).redundant_pos = 6; % position index
-STIM.TrialType(3).distractor_pos = [1,2,4,5];
+STIM.TrialType(3).redundant_pos = 5; % position index
+STIM.TrialType(3).correctresponse = 2;
 
 STIM.TrialType(4).relevant_idx = 7; % morphseries index
+STIM.TrialType(4).relevant_pos = 2; % position index
 STIM.TrialType(4).redundant_idx = 8; % morphseries index
+STIM.TrialType(4).redundant_pos = 5; % position index
 STIM.TrialType(4).correctresponse = 2;
-STIM.TrialType(4).relevant_pos = 3; % position index
-STIM.TrialType(4).redundant_pos = 6; % position index
-STIM.TrialType(4).distractor_pos = [1,2,4,5];
-
-STIM.Template.distractor_idx = 9:24;
-
 
 % %% CUE INFO =============================================================
 % % line pointing left or right

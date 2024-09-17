@@ -1,4 +1,4 @@
-function CLL_run(SettingsFile,Debug,WLOG)
+function CLL_run_red(SettingsFile,Debug,WLOG)
 
 %% PTB3 script for ======================================================
 % CHOICE_LEARNING experiment
@@ -12,7 +12,6 @@ function CLL_run(SettingsFile,Debug,WLOG)
 % - In the reponse phase, subjects say A or B
 % - Feedback can be provided on whether this was correct
 %==========================================================================
-global STIM
 clc; QuitScript = false;
 
 if nargin < 3
@@ -805,13 +804,13 @@ try
 
     %% Save the data
     % remove the images from the log to save space
--   if STIM.RemoveImagesFromLog
--       for i = 1: size(STIM.img,1)
--           for j = 1:size(STIM.img,2)
--               STIM.img(i,j).img = [];
--           end
--       end
--   end
+    if STIM.RemoveImagesFromLog
+        for i = 1:size(STIM.img,1)
+            for j = 1:size(STIM.img,2)
+                STIM.img(i,j).img = [];
+            end
+        end
+    end
     [~,~] = mkdir(fullfile(StartFolder,DataFolder,HARDWARE.LogLabel));
     save(fullfile(StartFolder,DataFolder,HARDWARE.LogLabel,LOG.FileName),...
         'HARDWARE','STIM','LOG');
