@@ -63,9 +63,13 @@ STIM.Key2 = '0)';
 STIM.imgsz = [3 3];
 
 %% STIMULUS TRIAL TYPES =================================================
+%NB this section can be replaced by:
+% config_xxx; for preconfigured settings
+
 % image positions in polar coordinates
 STIM.Template.imgpos.r = 5;
 STIM.Template.imgpos.angle = 0:60:359; % 6 positions on a circle
+STIM.Template.relred.pos = [2 5]; % can be flipped
 STIM.Template.distractor(1).pos = 1;
 STIM.Template.distractor(1).idx = 9:12;
 STIM.Template.distractor(2).pos = 3;
@@ -78,27 +82,27 @@ STIM.Template.noreps = true; % if true, don't repeat distractors
 % start at 3 o'clock go ccw
 
 STIM.TrialType(1).relevant_idx = 1; % morphseries index
-STIM.TrialType(1).relevant_pos = 2; % position index
+STIM.TrialType(1).relevant_pos = STIM.Template.relred.pos(1); % position index
 STIM.TrialType(1).redundant_idx = 2; % morphseries index
-STIM.TrialType(1).redundant_pos = 5; % position index
+STIM.TrialType(1).redundant_pos = STIM.Template.relred.pos(2); % position index
 STIM.TrialType(1).correctresponse = 1;
 
 STIM.TrialType(2).relevant_idx = 3; % morphseries index
-STIM.TrialType(2).relevant_pos = 2; % position index
+STIM.TrialType(2).relevant_pos = STIM.Template.relred.pos(1); % position index
 STIM.TrialType(2).redundant_idx = 4; % morphseries index
-STIM.TrialType(2).redundant_pos = 5; % position index
+STIM.TrialType(2).redundant_pos = STIM.Template.relred.pos(2); % position index
 STIM.TrialType(2).correctresponse = 2;
 
 STIM.TrialType(3).relevant_idx = 5; % morphseries index
-STIM.TrialType(3).relevant_pos = 2; % position index
+STIM.TrialType(3).relevant_pos = STIM.Template.relred.pos(2); % position index
 STIM.TrialType(3).redundant_idx = 6; % morphseries index
-STIM.TrialType(3).redundant_pos = 5; % position index
-STIM.TrialType(3).correctresponse = 2;
+STIM.TrialType(3).redundant_pos = STIM.Template.relred.pos(1); % position index
+STIM.TrialType(3).correctresponse = 1;
 
 STIM.TrialType(4).relevant_idx = 7; % morphseries index
-STIM.TrialType(4).relevant_pos = 2; % position index
+STIM.TrialType(4).relevant_pos = STIM.Template.relred.pos(2); % position index
 STIM.TrialType(4).redundant_idx = 8; % morphseries index
-STIM.TrialType(4).redundant_pos = 5; % position index
+STIM.TrialType(4).redundant_pos = STIM.Template.relred.pos(1); % position index
 STIM.TrialType(4).correctresponse = 2;
 
 % %% CUE INFO =============================================================

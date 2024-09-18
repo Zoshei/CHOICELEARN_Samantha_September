@@ -63,6 +63,9 @@ STIM.Key2 = '0)';
 STIM.imgsz = [3 3];
 
 %% STIMULUS TRIAL TYPES =================================================
+%NB this section can be replaced by:
+% config_red_xxx; for preconfigured settings
+
 % image positions in polar coordinates
 STIM.Template.imgpos.r = 0;
 STIM.Template.imgpos.angle = 0; % 1 positions on a circle
@@ -89,6 +92,8 @@ STIM.TrialType(4).morphposition = 10;
 STIM.TrialType(4).imgtype = 'redundant'; % 
 STIM.TrialType(4).correctresponse = 1;
 
+STIM.Trials.TrialsInExp = 1:4; % trial types
+
 %% EXPERIMENT STRUCTURE =================================================
 % in each trial there should alway be:
 % cue side: 1 image with response association, one without  
@@ -112,7 +117,6 @@ STIM.RequireContFix = false;
 STIM.Trials.RandomTrials = true; % also applies to non-blocked
 STIM.Trials.InterMixed = true; % mix morphseries
 STIM.Trials.norep = true; % if true no repeating of same trials (when mixed)
-STIM.Trials.TrialsInExp = 1:4; % trial types
 STIM.Trials.PerformanceThreshold = [5 5]; 
 % [x y] x out of the last y trials for this trialtype have to be correct 
 % to go to the next step 
