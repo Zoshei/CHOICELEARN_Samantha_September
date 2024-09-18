@@ -41,32 +41,9 @@ STIM.WelcomeText = ['Choose the 1 or 0 key for the cued image\n\n'...
                     '>> Press any key to start <<'];
 
 %% IMAGE-SERIES INFO ====================================================
-STIM.morphs(1).class =  {'0008', '0966'}; % Hen - Wineglass
-STIM.morphs(2).class =  {'0074', '0985'}; % Spider - Daisy
-STIM.morphs(3).class =  {'0096', '0637'}; % Toucan - Mailbox
-STIM.morphs(4).class =  {'0104', '0604'}; % Kangaroo - Hourglass
-STIM.morphs(5).class =  {'0113', '0407'}; % Snail - Ambulance
-STIM.morphs(6).class =  {'0143', '0437'}; % Bird - Lighthouse
-STIM.morphs(7).class =  {'0162', '0510'}; % Beagle - Container ship
-STIM.morphs(8).class =  {'0281', '0817'}; % Cat - Car
-STIM.morphs(9).class =  {'0294', '0577'}; % Bear - Gong
-STIM.morphs(10).class = {'0309', '0448'}; % Bee - Birdhouse
-STIM.morphs(11).class = {'0323', '0938'}; % Butterfly - Cauliflower
-STIM.morphs(12).class = {'0363', '0821'}; % Armadillo - Bridge
-STIM.morphs(13).class = {'0153', '0484'}; % White dog - Sailboat
-STIM.morphs(14).class = {'0076', '0666'}; % Tarantula - Mortar and pestle
-STIM.morphs(15).class = {'0001', '0470'}; % Goldfish - Candle
-STIM.morphs(16).class = {'0024', '0493'}; % Owl - Closet
-STIM.morphs(17).class = {'0039', '0852'}; % Iguana - Tennis ball
-STIM.morphs(18).class = {'0094', '0955'}; % Snake – Jackfruit 
-STIM.morphs(19).class = {'0086', '0579'}; % Bird 2 – Piano
-STIM.morphs(20).class = {'0040', '0417'}; % Chameleon – Air balloon
-STIM.morphs(21).class = {'0992', '0555'}; % Mushroom – Fire brigade
-STIM.morphs(22).class = {'0108', '0504'}; % Anemone – Mug
-STIM.morphs(23).class = {'0187', '0967'}; % Brown dog – Coffee 
-STIM.morphs(24).class = {'0112', '0900'}; % Shell - Water tower
-
-STIM.morphimgs = 0:10;
+% put these in a separate file to avoid inconsistencies between 
+% CLL_run and CLL_run_red
+CLL_morphseries; % run this file
 
 %% STIMULUS INFO ========================================================
 % NB! For positions, note that shifting rightwards and downwards are 
@@ -89,7 +66,6 @@ STIM.imgsz = [3 3];
 % image positions in polar coordinates
 STIM.Template.imgpos.r = 5;
 STIM.Template.imgpos.angle = 0:60:359; % 6 positions on a circle
-STIM.Template.distractor_idx = 9:24 ;
 STIM.Template.distractor(1).pos = 1;
 STIM.Template.distractor(1).idx = 9:12;
 STIM.Template.distractor(2).pos = 3;
@@ -98,6 +74,7 @@ STIM.Template.distractor(3).pos = 4;
 STIM.Template.distractor(3).idx = 17:20;
 STIM.Template.distractor(4).pos = 6;
 STIM.Template.distractor(4).idx = 21:24;
+STIM.Template.noreps = true; % if true, don't repeat distractors
 % start at 3 o'clock go ccw
 
 STIM.TrialType(1).relevant_idx = 1; % morphseries index
@@ -153,6 +130,7 @@ STIM.RequireContFix = false;
 % TRIALS ----------------
 STIM.Trials.RandomTrials = true; % also applies to non-blocked
 STIM.Trials.InterMixed = true; % mix morphseries
+STIM.Trials.norep = true; % if true no repeating of same trials (when mixed)
 STIM.Trials.TrialsInExp = 1:4; % trial types
 STIM.Trials.PerformanceThreshold = [100 100]; 
 % [x y] x out of the last y trials for this trialtype have to be correct 

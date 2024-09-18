@@ -41,32 +41,9 @@ STIM.WelcomeText = ['Choose the 1 or 0 key for the cued image\n\n'...
                     '>> Press any key to start <<'];
 
 %% IMAGE-SERIES INFO ====================================================
-STIM.morphs(1).class =  {'0008', '0966'}; % Hen - Wineglass
-STIM.morphs(2).class =  {'0074', '0985'}; % Spider - Daisy
-STIM.morphs(3).class =  {'0096', '0637'}; % Toucan - Mailbox
-STIM.morphs(4).class =  {'0104', '0604'}; % Kangaroo - Hourglass
-STIM.morphs(5).class =  {'0113', '0407'}; % Snail - Ambulance
-STIM.morphs(6).class =  {'0143', '0437'}; % Bird - Lighthouse
-STIM.morphs(7).class =  {'0162', '0510'}; % Beagle - Container ship
-STIM.morphs(8).class =  {'0281', '0817'}; % Cat - Car
-STIM.morphs(9).class =  {'0294', '0577'}; % Bear - Gong
-STIM.morphs(10).class = {'0309', '0448'}; % Bee - Birdhouse
-STIM.morphs(11).class = {'0323', '0938'}; % Butterfly - Cauliflower
-STIM.morphs(12).class = {'0363', '0821'}; % Armadillo - Bridge
-STIM.morphs(13).class = {'0153', '0484'}; % White dog - Sailboat
-STIM.morphs(14).class = {'0076', '0666'}; % Tarantula - Mortar and pestle
-STIM.morphs(15).class = {'0001', '0470'}; % Goldfish - Candle
-STIM.morphs(16).class = {'0024', '0493'}; % Owl - Closet
-STIM.morphs(17).class = {'0039', '0852'}; % Iguana - Tennis ball
-STIM.morphs(18).class = {'0094', '0955'}; % Snake – Jackfruit 
-STIM.morphs(19).class = {'0086', '0579'}; % Bird 2 – Piano
-STIM.morphs(20).class = {'0040', '0417'}; % Chameleon – Air balloon
-STIM.morphs(21).class = {'0992', '0555'}; % Mushroom – Fire brigade
-STIM.morphs(22).class = {'0108', '0504'}; % Anemone – Mug
-STIM.morphs(23).class = {'0187', '0967'}; % Brown dog – Coffee 
-STIM.morphs(24).class = {'0112', '0900'}; % Shell - Water tower
-
-STIM.morphimgs = 0:10;
+% put these in a separate file to avoid inconsistencies between 
+% CLL_run and CLL_run_red
+CLL_morphseries; % run this file
 
 %% STIMULUS INFO ========================================================
 % NB! For positions, note that shifting rightwards and downwards are 
@@ -91,35 +68,26 @@ STIM.Template.imgpos.r = 0;
 STIM.Template.imgpos.angle = 0; % 1 positions on a circle
 % start at 3 o'clock go ccw
 
-STIM.TrialType(1).relevant_idx = 1; % morphseries index
-STIM.TrialType(1).redundant_idx = 2; % morphseries index
+STIM.TrialType(1).morphseries_idx = 1;
+STIM.TrialType(1).morphposition = 1;
+STIM.TrialType(1).imgtype = 'relevant'; % only here for logging purposes
 STIM.TrialType(1).correctresponse = 1;
-STIM.TrialType(1).relevant_pos = 2; % position index
-STIM.TrialType(1).redundant_pos = 5; % position index
-STIM.TrialType(1).distractor_pos = [1,3,4,6];
+% make sure this is correct
 
-STIM.TrialType(2).relevant_idx = 3; % morphseries index
-STIM.TrialType(2).redundant_idx = 4; % morphseries index
-STIM.TrialType(2).correctresponse = 2;
-STIM.TrialType(2).relevant_pos = 2; % position index
-STIM.TrialType(2).redundant_pos = 5; % position index
-STIM.TrialType(2).distractor_pos = [1,3,4,6];
+STIM.TrialType(2).morphseries_idx = 1;
+STIM.TrialType(2).morphposition = 10;
+STIM.TrialType(2).imgtype = 'relevant'; % 
+STIM.TrialType(2).correctresponse = 1;
 
-STIM.TrialType(3).relevant_idx = 5; % morphseries index
-STIM.TrialType(3).redundant_idx = 6; % morphseries index
+STIM.TrialType(3).morphseries_idx = 2;
+STIM.TrialType(3).morphposition = 1;
+STIM.TrialType(3).imgtype = 'redundant'; % 
 STIM.TrialType(3).correctresponse = 1;
-STIM.TrialType(3).relevant_pos = 3; % position index
-STIM.TrialType(3).redundant_pos = 6; % position index
-STIM.TrialType(3).distractor_pos = [1,2,4,5];
 
-STIM.TrialType(4).relevant_idx = 7; % morphseries index
-STIM.TrialType(4).redundant_idx = 8; % morphseries index
-STIM.TrialType(4).correctresponse = 2;
-STIM.TrialType(4).relevant_pos = 3; % position index
-STIM.TrialType(4).redundant_pos = 6; % position index
-STIM.TrialType(4).distractor_pos = [1,2,4,5];
-
-STIM.Template.distractor_idx = 9:24;
+STIM.TrialType(4).morphseries_idx = 2;
+STIM.TrialType(4).morphposition = 10;
+STIM.TrialType(4).imgtype = 'redundant'; % 
+STIM.TrialType(4).correctresponse = 1;
 
 %% EXPERIMENT STRUCTURE =================================================
 % in each trial there should alway be:
@@ -129,7 +97,6 @@ STIM.Template.distractor_idx = 9:24;
 
 % Timing of trial (in ms)
 STIM.Times.Fix = 500;
-STIM.Times.Cue = [0 Inf]; % ms after fix [start stop] 
 STIM.Times.Stim = [0 Inf]; % ms after fix [start stop]
 STIM.Times.Feedback = 1000;
 STIM.Times.ITI = 500; % ms after response or stim stop
@@ -144,6 +111,7 @@ STIM.RequireContFix = false;
 % TRIALS ----------------
 STIM.Trials.RandomTrials = true; % also applies to non-blocked
 STIM.Trials.InterMixed = true; % mix morphseries
+STIM.Trials.norep = true; % if true no repeating of same trials (when mixed)
 STIM.Trials.TrialsInExp = 1:4; % trial types
 STIM.Trials.PerformanceThreshold = [5 5]; 
 % [x y] x out of the last y trials for this trialtype have to be correct 
@@ -154,8 +122,8 @@ STIM.Trials.MaxNumTrials = 1000;
 
 %% FEEDBACK =============================================================
 % Feedback?
-STIM.PerformanceFeedback = true;
-STIM.UseSoundFeedback = true;
+STIM.PerformanceFeedback = false;
+STIM.UseSoundFeedback = false;
 
 % where are the sounds 
 STIM.snddir = 'snd';

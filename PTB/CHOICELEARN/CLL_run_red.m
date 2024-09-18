@@ -69,7 +69,6 @@ try
                 LOG.DateTimeStr = datestr(datetime('now'), 'yyyymmdd_HHMM');
             end
         end
-        
     end
 
     if HARDWARE.EyelinkConnected %#ok<*USENS>
@@ -197,11 +196,10 @@ try
     % experiment
 
     uniquetrials = unique(LOG.TrialList);
-    allimages = STIM.Template.distractor_idx;
+    allimages = [];
     for ut = uniquetrials'
         allimages = [allimages, ...
-            STIM.TrialType(ut).relevant_idx ...
-            STIM.TrialType(ut).redundant_idx ]; %#ok<*AGROW>
+            STIM.TrialType(ut).morphseries_idx]; %#ok<*AGROW>
     end
     uniqueimages = unique(allimages);
 
@@ -230,19 +228,22 @@ try
     for tt = STIM.Trials.TrialsInExp
         for j = 1:length(STIM.morphimgs)
             STIM.dyn(tt).resp{j} = [];
+            STIM.dyn(tt).rt{j} = [];
         end
         STIM.dyn(tt).done = false;
         STIM.dyn(tt).currentimg = 1;
     end
 
     % load the sounds we need
-    [curpath, name, ext] = fileparts(mfilename('fullpath'));
-    [snd(1).wav,snd(1).fs] = audioread(fullfile(curpath,STIM.snddir,...
-        STIM.Feedback.SoundCorrect{1}));
-    [snd(2).wav,snd(2).fs] = audioread(fullfile(curpath,STIM.snddir,...
-        STIM.Feedback.SoundCorrect{2}));
-    [snd(3).wav,snd(3).fs] = audioread(fullfile(curpath,STIM.snddir,...
-        STIM.Feedback.SoundWrong));
+    if STIM.UseSoundFeedback
+        [curpath, name, ext] = fileparts(mfilename('fullpath'));
+        [snd(1).wav,snd(1).fs] = audioread(fullfile(curpath,STIM.snddir,...
+            STIM.Feedback.SoundCorrect{1}));
+        [snd(2).wav,snd(2).fs] = audioread(fullfile(curpath,STIM.snddir,...
+            STIM.Feedback.SoundCorrect{2}));
+        [snd(3).wav,snd(3).fs] = audioread(fullfile(curpath,STIM.snddir,...
+            STIM.Feedback.SoundWrong));
+    end
 
     % convert image locations to rects and the cue lines to coordinates
     for p = 1:length(STIM.Template.imgpos.angle)
@@ -255,20 +256,6 @@ try
         STIM.imgszpix = round(STIM.imgsz.*HARDWARE.Deg2Pix);
         rect = [0 0 STIM.imgszpix];
         STIM.pos(p).rect = CenterRectOnPoint(rect,X,Y); 
-        % % cue points
-        % STIM.cue.szpix = round(STIM.cue.sz.*HARDWARE.Deg2Pix);
-        % [x1,y1]=pol2cart(...
-        %     deg2rad(STIM.Template.imgpos.angle(p)),...
-        %     STIM.cue.pos*HARDWARE.Deg2Pix);
-        % [x2,y2]=pol2cart(...
-        %     deg2rad(STIM.Template.imgpos.angle(p)),...
-        %     STIM.cue.pos*HARDWARE.Deg2Pix+STIM.cue.szpix(2));
-        % x1 = HARDWARE.Center(1)+x1;
-        % y1 = HARDWARE.Center(2)-y1;
-        % x2 = HARDWARE.Center(1)+x2;
-        % y2 = HARDWARE.Center(2)-y2;
-        % STIM.pos(p).cuexy = [x1,y1,x2,y2];
-        % STIM.pos(p).cuewidth = STIM.cue.szpix(1);
     end
 
     % Create filename ---
@@ -326,7 +313,7 @@ try
         CurrTrialListIdx = 1;
     end
     
-    while trialsdone <= STIM.Trials.MaxNumTrials && ~AllSeriesDone && ~QuitScript
+    while trialsdone <= STIM.Trials.MaxNumTrials && ~QuitScript
         for TR = 1:length(CurrTrialList)
             if QuitScript
                 break;
@@ -498,17 +485,10 @@ try
 
                 %% Cue/Image-phase
                 LOG.Trial(trialsdone+1).StimPhaseOnset = vbl - LOG.ExpOnset;
-                MaxDur = max([STIM.Times.Cue(2) STIM.Times.Stim(2)]);
+                MaxDur = STIM.Times.Stim(2);
                 ResponseGiven = false;
 
-                % prep distractors
-                didx = STIM.Template.distractor_idx;
-                didx = didx(randperm(length(didx)));
-                didx = didx(1:length(STIM.TrialType(tidx).distractor_pos));
-                LOG.Trial(trialsdone+1).distractor_idx = didx;
-
                 FirstFlipDone = false;
-                CueOnLog = false;
                 ImageOnLog = false;
                 nl=0;
                 while vbl - LOG.ExpOnset < ...
@@ -518,55 +498,20 @@ try
                     Screen('FillRect',HARDWARE.window,...
                         STIM.BackColor*HARDWARE.white);
 
-                    % % CUE --
-                    % if vbl - LOG.ExpOnset >= LOG.Trial(trialsdone+1).StimPhaseOnset + ...
-                    %         STIM.Times.Cue(1)/1000 && ...
-                    %         ~QuitScript
-                    % 
-                    %     % Draw cue
-                    %     p = STIM.TrialType(tidx).relevant_pos;
-                    %     Screen('DrawLine',HARDWARE.window,...
-                    %         STIM.cue.color.*HARDWARE.white,...
-                    %         STIM.pos(p).cuexy(1), STIM.pos(p).cuexy(2),...
-                    %         STIM.pos(p).cuexy(3), STIM.pos(p).cuexy(4),...
-                    %         STIM.pos(p).cuewidth);
-                    % end
-
                     % IMAGES --
                     if vbl - LOG.ExpOnset >= LOG.Trial(trialsdone+1).StimPhaseOnset + ...
                             STIM.Times.Stim(1)/1000 && ~QuitScript
                         % Draw stim images
-
-                        % % relevant
-                        % idx = STIM.TrialType(tidx).relevant_idx;
-                        % p = STIM.TrialType(tidx).relevant_pos;
-                        % Screen('DrawTexture', HARDWARE.window,...
-                        %     STIM.img(idx,STIM.dyn(tidx).currentimg).tex,...
-                        %     [],STIM.pos(p).rect)
-
-                        % redundant
-                        idx = STIM.TrialType(tidx).redundant_idx;
-                        p = STIM.TrialType(tidx).redundant_pos;
+                        idx = STIM.TrialType(tidx).morphseries_idx;
+                        idx2 = STIM.TrialType(tidx).morphposition;
                         Screen('DrawTexture', HARDWARE.window,...
-                            STIM.img(idx,STIM.dyn(tidx).currentimg).tex,...
-                            [],STIM.pos(p).rect)
-
-                        % % other
-                        % for d=1:length(didx)
-                        %     p = STIM.TrialType(tidx).distractor_pos(d);
-                        %     Screen('DrawTexture', HARDWARE.window,...
-                        %         STIM.img(didx(d),STIM.dyn(tidx).currentimg).tex,...
-                        %         [],STIM.pos(p).rect);
-                        % end
-                        
+                            STIM.img(idx,idx2).tex,[],STIM.pos(1).rect)
                     end
 
                     % FIX --
                     % Draw fix dot
                     Screen('FillOval', HARDWARE.window,...
                         STIM.Fix.Color.*HARDWARE.white,FixRect);
-
-                    
 
                     % GET RESPONSE --
                     % Check for key-presses
@@ -579,6 +524,8 @@ try
                         elseif keyCode(Key1)
                             %fprintf('Key 1 pressed\n')
                             j = STIM.dyn(tidx).currentimg;
+                            RT = LOG.Trial(trialsdone+1).StimPhaseOnset-secs;
+                            STIM.dyn(tidx).rt{j} = [STIM.dyn(tidx).rt{j} RT];
                             if STIM.TrialType(tidx).correctresponse == 1
                                 STIM.dyn(tidx).resp{j} = [STIM.dyn(tidx).resp{j} 1];
                                 CorrectResponse = true;
@@ -592,6 +539,8 @@ try
                         elseif keyCode(Key2)
                             %fprintf('Key 0 pressed\n')
                             j = STIM.dyn(tidx).currentimg;
+                            RT = LOG.Trial(trialsdone+1).StimPhaseOnset-secs;
+                            STIM.dyn(tidx).rt{j} = [STIM.dyn(tidx).rt{j} RT];
                             if STIM.TrialType(tidx).correctresponse == 2
                                 STIM.dyn(tidx).resp{j} = [STIM.dyn(tidx).resp{j} 1];
                                 CorrectResponse = true;
@@ -644,16 +593,6 @@ try
                         end
                         FirstFlipDone = true;
                     end
-                    if ~CueOnLog
-                        % Log stim-phase onset
-                        LOG.Trial(trialsdone+1).CueOnset = ...
-                            vbl - LOG.ExpOnset;
-                        % send message to eyelink
-                        if HARDWARE.EyelinkConnected
-                            Eyelink('Message', 'Cue');
-                        end
-                        CueOnLog = true;
-                    end
 
                     if ~ImageOnLog
                         % Log stim-phase onset
@@ -672,7 +611,7 @@ try
                 trialsdone = trialsdone+1;
 
                 %% Feedback
-                if ~QuitScript
+                if ~QuitScript && STIM.PerformanceFeedback
                     StartFeedback=GetSecs;
                     LOG.Trial(trialsdone).FeedbackOnset = vbl - LOG.ExpOnset;
                     LOG.Trial(trialsdone).RespCorr = CorrectResponse;
@@ -732,49 +671,17 @@ try
                     % wait
                 end
             end
-        
-            % performance for this series
-            resp = STIM.dyn(tidx).resp{STIM.dyn(tidx).currentimg};
-            respinv = fliplr(resp);
-            if size(resp,2) >= STIM.Trials.PerformanceThreshold(2) && ...
-                    sum(respinv(1:STIM.Trials.PerformanceThreshold(2))) >= ...
-                    STIM.Trials.PerformanceThreshold(1)
-                % next image
-                STIM.dyn(tidx).currentimg = STIM.dyn(tidx).currentimg+1;
-                if STIM.dyn(tidx).currentimg > length(STIM.morphimgs)
-                    STIM.dyn(tidx).done = true;
-                    if ~STIM.Trials.InterMixed
-                        CurrTrialListIdx = CurrTrialListIdx + 1;
-                        if CurrTrialListIdx > length(LOG.TrialList)
-                            AllSeriesDone = true;
-                        else
-                            CurrTrialList = LOG.TrialList(CurrTrialListIdx);
-                        end
-                    end
-                end
-            end
-        end
-
-        % check if there are series incomplete
-        if STIM.Trials.InterMixed
-            AllSeriesDone = true; remidx = [];
-            for TT  = 1:size(CurrTrialList,2)
-                if STIM.dyn(CurrTrialList(TT)).done
-                    remidx = [remidx TT];
-                else
-                    AllSeriesDone = false;
-                end
-            end
-            if ~isempty(remidx)
-                CurrTrialList(remidx) = [];
-            end
-             if isempty(CurrTrialList)
-                AllSeriesDone = true;
-             end
         end
         
-        if STIM.Trials.RandomTrials && ~AllSeriesDone
+        if STIM.Trials.RandomTrials
+            previoustrial = CurrTrialList(end);
             CurrTrialList = CurrTrialList(randperm(length(CurrTrialList)));
+            % avoid repeats if asked
+            while STIM.Trials.norep && ...
+                    CurrTrialList(1) == previoustrial && ...
+                    length(CurrTrialList)>1
+                CurrTrialList = CurrTrialList(randperm(length(CurrTrialList)));
+            end
         end
 
     end

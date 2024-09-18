@@ -197,12 +197,11 @@ try
     % experiment
 
     uniquetrials = unique(LOG.TrialList);
-    allimages = STIM.Template.distractor_idx;
+    allimages = [STIM.Template.distractor.idx];
     for ut = uniquetrials'
         allimages = [allimages, ...
             STIM.TrialType(ut).relevant_idx ...
-            STIM.TrialType(ut).redundant_idx ...
-             STIM.TrialType(ut).distractor_idx ]; %#ok<*AGROW>
+            STIM.TrialType(ut).redundant_idx ]; %#ok<*AGROW>
     end
     uniqueimages = unique(allimages);
 
@@ -238,13 +237,15 @@ try
     end
 
     % load the sounds we need
-    [curpath, name, ext] = fileparts(mfilename('fullpath'));
-    [snd(1).wav,snd(1).fs] = audioread(fullfile(curpath,STIM.snddir,...
-        STIM.Feedback.SoundCorrect{1}));
-    [snd(2).wav,snd(2).fs] = audioread(fullfile(curpath,STIM.snddir,...
-        STIM.Feedback.SoundCorrect{2}));
-    [snd(3).wav,snd(3).fs] = audioread(fullfile(curpath,STIM.snddir,...
-        STIM.Feedback.SoundWrong));
+    if STIM.UseSoundFeedback
+        [curpath, name, ext] = fileparts(mfilename('fullpath'));
+        [snd(1).wav,snd(1).fs] = audioread(fullfile(curpath,STIM.snddir,...
+            STIM.Feedback.SoundCorrect{1}));
+        [snd(2).wav,snd(2).fs] = audioread(fullfile(curpath,STIM.snddir,...
+            STIM.Feedback.SoundCorrect{2}));
+        [snd(3).wav,snd(3).fs] = audioread(fullfile(curpath,STIM.snddir,...
+            STIM.Feedback.SoundWrong));
+    end
 
     % convert image locations to rects and the cue lines to coordinates
     for p = 1:length(STIM.Template.imgpos.angle)
@@ -327,6 +328,10 @@ try
         CurrTrialList = LOG.TrialList(1);
         CurrTrialListIdx = 1;
     end
+
+    % keep track of previous distractors to avoid repetition
+    previous.dpos = [];
+    previous.didx = [];
 
     while trialsdone <= STIM.Trials.MaxNumTrials && ~AllSeriesDone && ~QuitScript
         for TR = 1:length(CurrTrialList)
@@ -509,12 +514,20 @@ try
                 for dp = 1:length(STIM.Template.distractor)
                     dpos = [dpos STIM.Template.distractor(dp).pos]; % positions
                     % get random distractor
-                    RD = randperm(length(STIM.Template.distractor(dp).idx));
+                    RD = Shuffle(STIM.Template.distractor(dp).idx);
+                    % prevent repeats if asked
+                    while STIM.Template.noreps && ...
+                            ~isempty(previous.didx) && ...
+                            previous.didx(dp) == RD(1)
+                        RD = Shuffle(STIM.Template.distractor(dp).idx);
+                    end
                     didx = [didx; RD(1)];
                     % log
                     LOG.Trial(trialsdone+1).distractor_idx = didx;
                     LOG.Trial(trialsdone+1).distractor_pos = dpos;
                 end
+                previous.dpos = dpos;
+                previous.didx = didx;
 
                 FirstFlipDone = false;
                 CueOnLog = false;
@@ -784,7 +797,14 @@ try
         end
 
         if STIM.Trials.RandomTrials && ~AllSeriesDone
+            previoustrial = CurrTrialList(end);
             CurrTrialList = CurrTrialList(randperm(length(CurrTrialList)));
+            % avoid repeats if asked
+            while STIM.Trials.norep && ...
+                    CurrTrialList(1) == previoustrial && ...
+                    length(CurrTrialList)>1
+                CurrTrialList = CurrTrialList(randperm(length(CurrTrialList)));
+            end
         end
 
     end
